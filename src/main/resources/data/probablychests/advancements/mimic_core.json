@@ -1,7 +1,7 @@
 {
   "display": {
     "icon": {
-      "item": "probablychests:mimic_core"
+      "id": "probablychests:mimic_core"
     },
     "title": "Strange Looks",
     "description": "Acquire a suspicious eye",

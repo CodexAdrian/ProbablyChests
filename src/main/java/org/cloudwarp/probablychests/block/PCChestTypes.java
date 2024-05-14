@@ -1,8 +1,8 @@
 package org.cloudwarp.probablychests.block;
 
-import net.fabricmc.fabric.api.object.builder.v1.block.FabricBlockSettings;
+import com.mojang.serialization.Codec;
+import net.minecraft.block.AbstractBlock;
 import net.minecraft.block.BlockState;
-import net.minecraft.block.Material;
 import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.entity.EntityType;
 import net.minecraft.screen.ScreenHandlerType;
@@ -36,6 +36,8 @@ public enum PCChestTypes {
 	public final int rowLength;
 	public final Identifier texture;
 	public final String name;
+
+	public static final Codec<PCChestTypes> CODEC = Codec.STRING.xmap(PCChestTypes::valueOf, PCChestTypes::name);
 
 	PCChestTypes (int size, int rowLength, Identifier texture, String name) {
 		this.size = size;
@@ -115,38 +117,43 @@ public enum PCChestTypes {
 		};
 	}
 
-	public FabricBlockSettings setting () {
+	public AbstractBlock.Settings setting () {
 		return switch (this) {
-			case LUSH, NORMAL -> FabricBlockSettings.of(Material.WOOD)
+			case LUSH, NORMAL -> AbstractBlock.Settings.create()
+					.sounds(BlockSoundGroup.WOOD)
 					.hardness(2.0F)
 					.resistance(3600000.0f)
 					.sounds(BlockSoundGroup.WOOD);
-			case ROCKY, STONE -> FabricBlockSettings.of(Material.STONE)
+			case ROCKY, STONE -> AbstractBlock.Settings.create()
+					.sounds(BlockSoundGroup.STONE)
 					.hardness(2.0F)
 					.resistance(3600000.0f)
 					.sounds(BlockSoundGroup.STONE);
-			case GOLD, SHADOW -> FabricBlockSettings.of(Material.METAL)
+			case GOLD, SHADOW -> AbstractBlock.Settings.create()
+					.sounds(BlockSoundGroup.METAL)
 					.hardness(2.0F)
 					.resistance(3600000.0f)
 					.sounds(BlockSoundGroup.METAL);
-			case ICE -> FabricBlockSettings.of(Material.DENSE_ICE)
+			case ICE -> AbstractBlock.Settings.create()
+					.sounds(BlockSoundGroup.GLASS)
 					.hardness(2.0F)
 					.resistance(3600000.0f)
 					.sounds(BlockSoundGroup.GLASS)
 					.luminance(state -> 7)
 					.slipperiness(0.98f);
-			case CORAL -> FabricBlockSettings.of(Material.WOOD)
+			case CORAL -> AbstractBlock.Settings.create()
+					.sounds(BlockSoundGroup.CORAL)
 					.hardness(2.0F)
 					.resistance(3600000.0f)
 					.sounds(BlockSoundGroup.CORAL)
 					.luminance(state -> PCChestBlock.isDry(state) ? 0 : 12)
 					.slipperiness(0.99f);
-			case NETHER -> FabricBlockSettings.of(Material.STONE)
+			case NETHER -> AbstractBlock.Settings.create()
+					.sounds(BlockSoundGroup.NETHER_BRICKS)
 					.hardness(2.0F)
 					.resistance(3600000.0f)
 					.sounds(BlockSoundGroup.STONE)
 					.luminance(state -> 9);
-			default -> FabricBlockSettings.of(Material.WOOD);
 		};
 	}
 

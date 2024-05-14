@@ -20,7 +20,7 @@
     }
   },
   "result": {
-    "item": "probablychests:ice_chest",
+    "id": "probablychests:ice_chest",
     "count": 1
   }
 }

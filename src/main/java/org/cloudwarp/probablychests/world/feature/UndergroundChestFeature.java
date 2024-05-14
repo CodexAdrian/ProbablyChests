@@ -118,7 +118,7 @@ public class UndergroundChestFeature extends Feature<DefaultFeatureConfig> {
 	public static boolean canReplace (BlockState state) {
 		return state.isIn(BlockTags.BASE_STONE_OVERWORLD) ||
 				state.isIn(BlockTags.DEEPSLATE_ORE_REPLACEABLES) ||
-				state.isIn(BlockTags.REPLACEABLE_PLANTS) ||
+				state.isIn(BlockTags.REPLACEABLE) ||
 				state.isIn(BlockTags.LUSH_GROUND_REPLACEABLE) ||
 				state.isIn(BlockTags.BASE_STONE_NETHER);
 	}

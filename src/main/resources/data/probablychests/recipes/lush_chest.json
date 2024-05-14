@@ -20,7 +20,7 @@
     }
   },
   "result": {
-    "item": "probablychests:lush_chest",
+    "id": "probablychests:lush_chest",
     "count": 1
   }
 }

@@ -20,7 +20,7 @@
     }
   },
   "result": {
-    "item": "probablychests:stone_chest",
+    "id": "probablychests:stone_chest",
     "count": 1
   }
 }

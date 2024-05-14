@@ -7,7 +7,7 @@
       "entries": [
         {
           "type": "loot_table",
-          "name": "probablychests:entities/void_key_mimic"
+          "value": "probablychests:entities/void_key_mimic"
         }
       ]
     }

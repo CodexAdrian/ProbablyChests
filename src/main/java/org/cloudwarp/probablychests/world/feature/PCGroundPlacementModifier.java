@@ -1,10 +1,12 @@
 package org.cloudwarp.probablychests.world.feature;
 
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.block.Blocks;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
+import net.minecraft.util.math.random.Random;
 import net.minecraft.world.Heightmap;
 import net.minecraft.world.StructureWorldAccess;
 import net.minecraft.world.gen.blockpredicate.BlockPredicate;
@@ -12,20 +14,19 @@ import net.minecraft.world.gen.feature.FeaturePlacementContext;
 import net.minecraft.world.gen.placementmodifier.PlacementModifier;
 import net.minecraft.world.gen.placementmodifier.PlacementModifierType;
 
-import net.minecraft.util.math.random.Random;;
 import java.util.stream.Stream;
 
 public class PCGroundPlacementModifier extends PlacementModifier {
 
 
-	public static final Codec<PCGroundPlacementModifier> MODIFIER_CODEC = RecordCodecBuilder.create((instance) -> instance.group(
-					(Direction.VERTICAL_CODEC.fieldOf("direction_of_search")).forGetter(PCGroundPlacementModifier -> PCGroundPlacementModifier.direction),
-					(BlockPredicate.BASE_CODEC.fieldOf("direction_target_condition")).forGetter(PCGroundPlacementModifier -> PCGroundPlacementModifier.directionPredicate),
-					(BlockPredicate.BASE_CODEC.fieldOf("target_condition")).forGetter(PCGroundPlacementModifier -> PCGroundPlacementModifier.targetPredicate),
-					(Codec.intRange(1, 32).fieldOf("max_steps")).forGetter(PCGroundPlacementModifier -> PCGroundPlacementModifier.maxSteps),
-					Heightmap.Type.CODEC.fieldOf("heightmap").forGetter((PCGroundPlacementModifier) -> PCGroundPlacementModifier.heightmap),
-					(Codec.INT.fieldOf("max_height").forGetter((PCGroundPlacementModifier) -> PCGroundPlacementModifier.maxHeight)))
-			.apply(instance, PCGroundPlacementModifier::new));
+	public static final MapCodec<PCGroundPlacementModifier> MODIFIER_CODEC = RecordCodecBuilder.mapCodec((instance) -> instance.group(
+			(Direction.VERTICAL_CODEC.fieldOf("direction_of_search")).forGetter(PCGroundPlacementModifier -> PCGroundPlacementModifier.direction),
+			(BlockPredicate.BASE_CODEC.fieldOf("direction_target_condition")).forGetter(PCGroundPlacementModifier -> PCGroundPlacementModifier.directionPredicate),
+			(BlockPredicate.BASE_CODEC.fieldOf("target_condition")).forGetter(PCGroundPlacementModifier -> PCGroundPlacementModifier.targetPredicate),
+			(Codec.intRange(1, 32).fieldOf("max_steps")).forGetter(PCGroundPlacementModifier -> PCGroundPlacementModifier.maxSteps),
+			Heightmap.Type.CODEC.fieldOf("heightmap").forGetter((PCGroundPlacementModifier) -> PCGroundPlacementModifier.heightmap),
+			(Codec.INT.fieldOf("max_height").forGetter((PCGroundPlacementModifier) -> PCGroundPlacementModifier.maxHeight))
+	).apply(instance, PCGroundPlacementModifier::new));
 	//---------------------------------------------------
 	private final Direction direction;
 	private final BlockPredicate directionPredicate;

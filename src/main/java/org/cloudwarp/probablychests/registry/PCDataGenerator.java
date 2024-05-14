@@ -17,7 +17,7 @@ public class PCDataGenerator implements DataGeneratorEntrypoint {
 
 	@Override
 	public void buildRegistry(RegistryBuilder registryBuilder) {
-		registryBuilder.addRegistry(RegistryKeys.CONFIGURED_FEATURE, PCFeatures::bootstrapConfigured);
 		registryBuilder.addRegistry(RegistryKeys.PLACED_FEATURE, PCFeatures::bootstrapPlaced);
+		registryBuilder.addRegistry(RegistryKeys.CONFIGURED_FEATURE, PCFeatures::bootstrapConfigured);
 	}
 }

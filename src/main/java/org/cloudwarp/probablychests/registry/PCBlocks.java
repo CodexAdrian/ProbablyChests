@@ -43,9 +43,9 @@ public class PCBlocks {
 	private static <T extends Block> T create (String name, T block, boolean createItem) {
 		BLOCKS.put(block, new Identifier(ProbablyChests.MOD_ID, name));
 		if (createItem) {
-			ItemGroupEvents.modifyEntriesEvent(ProbablyChests.PROBABLY_CHESTS_GROUP).register(content -> {
-				BlockItem blockItem = new BlockItem(block, new Item.Settings());
-				ITEMS.put(blockItem, BLOCKS.get(block));
+			BlockItem blockItem = new BlockItem(block, new Item.Settings());
+			ITEMS.put(blockItem, BLOCKS.get(block));
+			ItemGroupEvents.modifyEntriesEvent(PCItemGroups.ITEM_GROUP).register(content -> {
 				content.add(blockItem);
 			});
 		}

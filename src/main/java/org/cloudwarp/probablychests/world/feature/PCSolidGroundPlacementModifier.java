@@ -1,25 +1,24 @@
 package org.cloudwarp.probablychests.world.feature;
 
-import com.mojang.serialization.Codec;
+import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
+import net.minecraft.util.math.random.Random;
 import net.minecraft.world.StructureWorldAccess;
 import net.minecraft.world.gen.blockpredicate.BlockPredicate;
 import net.minecraft.world.gen.feature.FeaturePlacementContext;
 import net.minecraft.world.gen.placementmodifier.PlacementModifier;
 import net.minecraft.world.gen.placementmodifier.PlacementModifierType;
 
-import net.minecraft.util.math.random.Random;;
 import java.util.stream.Stream;
 
 public class PCSolidGroundPlacementModifier extends PlacementModifier {
 
 
-	public static final Codec<PCSolidGroundPlacementModifier> MODIFIER_CODEC = RecordCodecBuilder.create((instance) -> instance.group(
-					(BlockPredicate.BASE_CODEC.fieldOf("target_condition")).forGetter(PCSolidGroundPlacementModifier -> PCSolidGroundPlacementModifier.targetPredicate)
-			)
-			.apply(instance, PCSolidGroundPlacementModifier::new));
+	public static final MapCodec<PCSolidGroundPlacementModifier> MODIFIER_CODEC = RecordCodecBuilder.mapCodec((instance) -> instance.group(
+			(BlockPredicate.BASE_CODEC.fieldOf("target_condition")).forGetter(PCSolidGroundPlacementModifier -> PCSolidGroundPlacementModifier.targetPredicate)
+	).apply(instance, PCSolidGroundPlacementModifier::new));
 	//---------------------------------------------------
 
 	private final BlockPredicate targetPredicate;

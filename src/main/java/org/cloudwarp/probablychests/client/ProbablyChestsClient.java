@@ -4,51 +4,39 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.fabricmc.fabric.api.client.rendering.v1.BlockEntityRendererRegistry;
-import net.fabricmc.fabric.api.client.rendering.v1.EntityModelLayerRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
-import net.minecraft.block.BlockRenderType;
 import net.minecraft.client.gui.screen.ingame.HandledScreens;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.render.block.entity.BlockEntityRendererFactories;
 import net.minecraft.client.render.block.entity.BlockEntityRendererFactory;
 import net.minecraft.client.render.entity.EntityRendererFactory;
-import net.minecraft.client.render.entity.model.EntityModelLayer;
 import net.minecraft.entity.Entity;
-import net.minecraft.inventory.SimpleInventory;
-import net.minecraft.nbt.NbtCompound;
 import org.cloudwarp.probablychests.ProbablyChests;
 import org.cloudwarp.probablychests.block.PCChestTypes;
 import org.cloudwarp.probablychests.client.entity.PCChestRenderer;
-import org.cloudwarp.probablychests.entity.PCChestMimic;
 import org.cloudwarp.probablychests.entity.PCTameablePetWithInventory;
+import org.cloudwarp.probablychests.network.ConfigPacket;
+import org.cloudwarp.probablychests.network.MimicInventoryPacket;
 import org.cloudwarp.probablychests.registry.PCBlockEntities;
 import org.cloudwarp.probablychests.registry.PCEntities;
 import org.cloudwarp.probablychests.registry.PCScreenHandlerType;
 import org.cloudwarp.probablychests.screen.PCChestScreen;
 import org.cloudwarp.probablychests.screen.PCMimicScreen;
 import org.cloudwarp.probablychests.screenhandlers.PCMimicScreenHandler;
-import org.cloudwarp.probablychests.utils.PCEventHandler;
-import software.bernie.example.GeckoLibMod;
-
-import java.util.UUID;
 
 @Environment(EnvType.CLIENT)
 public class ProbablyChestsClient implements ClientModInitializer {
 	@Override
 	public void onInitializeClient () {
-		ClientPlayNetworking.registerGlobalReceiver(ProbablyChests.id("probably_chests_config_update"), (client, networkHandler, data, sender) -> {
-			NbtCompound tag = data.readNbt();
-			client.execute(() -> ProbablyChests.loadedConfig = ProbablyChests.nbtToConfig(tag));
+		ClientPlayNetworking.registerGlobalReceiver(ConfigPacket.ID, (payload, context) -> {
+			context.client().execute(() -> ProbablyChests.loadedConfig = ProbablyChests.nbtToConfig(payload.config()));
 		});
-		ClientPlayNetworking.registerGlobalReceiver(PCEventHandler.MIMIC_INVENTORY_PACKET_ID, (client, handler, buf, responseSender) -> {
+		ClientPlayNetworking.registerGlobalReceiver(MimicInventoryPacket.ID, (payload, context) -> {
 			// Read packet data on the event loop
-			int size = buf.readInt();
-			int id = buf.readVarInt();
-			int syncId = buf.readUnsignedByte();
-			client.execute(() -> {
-				ClientPlayerEntity player = client.player;
-				Entity entity = player.world.getEntityById(id);
+			int id = payload.entityId();
+			context.client().execute(() -> {
+				ClientPlayerEntity player = context.client().player;
+				Entity entity = player.getWorld().getEntityById(id);
 				if (entity instanceof PCTameablePetWithInventory mimicEntity && player.currentScreenHandler instanceof PCMimicScreenHandler mimicScreenHandler) {
 					mimicScreenHandler.setMimicEntity(mimicEntity);
 				}

@@ -1,7 +1,7 @@
 {
   "display": {
     "icon": {
-      "item": "probablychests:rocky_chest"
+      "id": "probablychests:rocky_chest"
     },
     "title": "Furniture Slayer",
     "description": "Defeat a wild mimic",

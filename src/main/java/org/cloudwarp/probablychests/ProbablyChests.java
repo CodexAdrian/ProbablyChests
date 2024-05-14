@@ -11,20 +11,17 @@ import net.minecraft.nbt.NbtCompound;
 import net.minecraft.util.Identifier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.cloudwarp.probablychests.network.PCCommonNetworking;
 import org.cloudwarp.probablychests.registry.*;
+import org.cloudwarp.probablychests.utils.MimicDifficulty;
 import org.cloudwarp.probablychests.utils.PCConfig;
 import org.cloudwarp.probablychests.utils.PCEventHandler;
-import org.cloudwarp.probablychests.utils.MimicDifficulty;
-import org.cloudwarp.probablychests.world.feature.PCFeatures;
 import org.cloudwarp.probablychests.world.feature.PCPlacementModifierType;
 import org.cloudwarp.probablychests.world.gen.PCWorldGen;
-import software.bernie.example.GeckoLibMod;
-import software.bernie.geckolib.GeckoLib;
 
 public class ProbablyChests implements ModInitializer {
 	public static final Logger LOGGER = LogManager.getLogger();
 	public static final String MOD_ID = "probablychests";
-	public static final ItemGroup PROBABLY_CHESTS_GROUP = FabricItemGroup.builder(new Identifier(MOD_ID, MOD_ID)).icon(() -> new ItemStack(PCBlocks.NORMAL_CHEST)).build();
 	public static ConfigHolder<PCConfig> configHolder;
 	public static PCConfig loadedConfig;
 
@@ -39,7 +36,7 @@ public class ProbablyChests implements ModInitializer {
 		configHolder = AutoConfig.getConfigHolder(PCConfig.class);
 		loadedConfig = getConfig();
 		PCEventHandler.registerEvents();
-		GeckoLib.initialize();
+		PCItemGroups.init();
 		PCSounds.init();
 		PCStatistics.init();
 		PCLootTables.init();
@@ -52,6 +49,8 @@ public class ProbablyChests implements ModInitializer {
 		PCEntitySpawns.init();
 		PCScreenHandlerType.registerScreenHandlers();
 		PCWorldGen.generatePCWorldGen();
+		PCCommonNetworking.init();
+		PCRegisteredFeatures.init();
 		LOGGER.info("[Probably-Chests] has successfully been initialized.");
 		LOGGER.info("[Probably-Chests] if you have any issues or questions feel free to join my Discord: https://discord.gg/fvcFxTg6sB");
 	}

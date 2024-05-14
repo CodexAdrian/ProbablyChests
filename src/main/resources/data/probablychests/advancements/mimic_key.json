@@ -1,7 +1,7 @@
 {
   "display": {
     "icon": {
-      "item": "probablychests:mimic_key"
+      "id": "probablychests:mimic_key"
     },
     "title": "Hostile Key",
     "description": "Acquire a suspicious key",

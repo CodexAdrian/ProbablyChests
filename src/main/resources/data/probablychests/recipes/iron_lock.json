@@ -14,7 +14,7 @@
     }
   },
   "result": {
-    "item": "probablychests:iron_lock",
+    "id": "probablychests:iron_lock",
     "count": 1
   }
 }

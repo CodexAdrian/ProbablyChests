@@ -29,7 +29,7 @@
             },
             {
               "type": "loot_table",
-              "name": "probablychests:blocks/pc_pot_normal"
+              "value": "probablychests:blocks/pc_pot_normal"
             }
           ],
           "conditions": [

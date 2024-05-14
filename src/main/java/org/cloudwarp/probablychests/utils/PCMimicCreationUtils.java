@@ -7,6 +7,8 @@ import net.minecraft.block.entity.LootableContainerBlockEntity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
+import net.minecraft.registry.RegistryKey;
+import net.minecraft.registry.RegistryKeys;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.Difficulty;
@@ -79,7 +81,7 @@ public class PCMimicCreationUtils {
 		world.spawnEntity(mimic);
 		if (isPetMimic) {
 			mimic.setSitting(true);
-			mimic.world.sendEntityStatus(mimic, (byte) 7);
+			mimic.getWorld().sendEntityStatus(mimic, (byte) 7);
 		}
 		boolean waterlogged = state.get(WATERLOGGED);
 		world.setBlockState(pos, waterlogged ? Blocks.WATER.getDefaultState() : Blocks.AIR.getDefaultState());
@@ -121,14 +123,14 @@ public class PCMimicCreationUtils {
 		}
 		other.discard();
 		world.spawnEntity(mimic);
-		mimic.world.sendEntityStatus(mimic, (byte) 7);
+		mimic.getWorld().sendEntityStatus(mimic, (byte) 7);
 	}
 
 	public static boolean isSecretMimic (PCBaseChestBlockEntity chest, World world, BlockPos pos, PCChestTypes type) {
 		if(world.getDifficulty() == Difficulty.PEACEFUL){
 			if (! chest.hasBeenInteractedWith && chest.isNatural) {
 				chest.hasBeenInteractedWith = true;
-				LootableContainerBlockEntity.setLootTable(world, world.getRandom(), pos, type.getLootTable());
+				chest.setLootTable(RegistryKey.of(RegistryKeys.LOOT_TABLE, type.getLootTable()));
 			}
 			return false;
 		}
@@ -138,7 +140,7 @@ public class PCMimicCreationUtils {
 			float mimicRandom = world.getRandom().nextFloat();
 			chest.isMimic = mimicRandom < config.worldGen.secretMimicChance;
 			if(!chest.isMimic){
-				LootableContainerBlockEntity.setLootTable(world, world.getRandom(), pos, type.getLootTable());
+				chest.setLootTable(RegistryKey.of(RegistryKeys.LOOT_TABLE, type.getLootTable()));
 			}
 		}
 		return chest.isMimic;

@@ -11,6 +11,7 @@ import net.minecraft.world.gen.blockpredicate.BlockPredicate;
 import net.minecraft.world.gen.feature.*;
 import net.minecraft.world.gen.placementmodifier.*;
 import org.cloudwarp.probablychests.ProbablyChests;
+import org.cloudwarp.probablychests.registry.PCRegisteredFeatures;
 import org.cloudwarp.probablychests.utils.PCConfig;
 
 import java.util.List;
@@ -18,10 +19,9 @@ import java.util.List;
 public class PCFeatures {
 
 	//--------------------------------------------------------------------------
-	private static final Feature<DefaultFeatureConfig> SURFACE_CHEST_FEATURE = new SurfaceChestFeature(DefaultFeatureConfig.CODEC);
 	public static final RegistryKey<ConfiguredFeature<?,?>> SURFACE_CHEST_KEY = registerConfiguredKey("surface_chest");
 	public static void bootstrapConfigured(Registerable<ConfiguredFeature<?, ?>> context) {
-		registerConfigured(context, SURFACE_CHEST_KEY, SURFACE_CHEST_FEATURE, new DefaultFeatureConfig());
+		registerConfigured(context, SURFACE_CHEST_KEY, PCRegisteredFeatures.SURFACE_CHEST_FEATURE, new DefaultFeatureConfig());
 	}
 	public static RegistryKey<ConfiguredFeature<?, ?>> registerConfiguredKey(String name) {
 		return RegistryKey.of(RegistryKeys.CONFIGURED_FEATURE, ProbablyChests.id(name));

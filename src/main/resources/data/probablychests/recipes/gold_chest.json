@@ -20,7 +20,7 @@
     }
   },
   "result": {
-    "item": "probablychests:gold_chest",
+    "id": "probablychests:gold_chest",
     "count": 1
   }
 }

@@ -14,7 +14,7 @@
     }
   },
   "result": {
-    "item": "probablychests:gold_lock",
+    "id": "probablychests:gold_lock",
     "count": 1
   }
 }

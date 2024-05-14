@@ -1,11 +1,9 @@
 package org.cloudwarp.probablychests.item;
 
 import net.minecraft.advancement.criterion.Criteria;
-import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.item.TooltipContext;
-import net.minecraft.entity.SpawnReason;
+import net.minecraft.client.item.TooltipType;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemPlacementContext;
 import net.minecraft.item.ItemStack;
@@ -14,16 +12,13 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvent;
-import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
-import net.minecraft.util.math.*;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
-import net.minecraft.world.event.GameEvent;
 import org.cloudwarp.probablychests.interfaces.PlayerEntityAccess;
 import org.cloudwarp.probablychests.registry.PCSounds;
 import org.cloudwarp.probablychests.registry.PCStatistics;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
@@ -53,7 +48,7 @@ public class MimicHandBellItem extends Item {
 		return ActionResult.success(world.isClient);
 	}
 	@Override
-	public void appendTooltip(ItemStack stack, @Nullable World world, List<Text> tooltip, TooltipContext context) {
+	public void appendTooltip(ItemStack stack, TooltipContext context, List<Text> tooltip, TooltipType type) {
 		if(Screen.hasShiftDown()){
 			tooltip.add(Text.translatable("item.probablychests.mimicHandBell.tooltip.shift"));
 			tooltip.add(Text.translatable("item.probablychests.mimicHandBell.tooltip.shift2"));

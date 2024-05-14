@@ -6,7 +6,7 @@
       "entries": [
         {
           "type": "minecraft:loot_table",
-          "name": "probablychests:chests/rare_items"
+          "value": "probablychests:chests/rare_items"
         }
       ]
     },
@@ -15,7 +15,7 @@
       "entries": [
         {
           "type": "minecraft:loot_table",
-          "name": "probablychests:chests/normal_items"
+          "value": "probablychests:chests/normal_items"
         }
       ]
     },
@@ -24,7 +24,7 @@
       "entries": [
         {
           "type": "minecraft:loot_table",
-          "name": "probablychests:chests/end_items"
+          "value": "probablychests:chests/end_items"
         }
       ]
     },
@@ -34,22 +34,22 @@
         {
           "type": "minecraft:loot_table",
           "weight": 1,
-          "name": "probablychests:chests/mining_items"
+          "value": "probablychests:chests/mining_items"
         },
         {
           "type": "minecraft:loot_table",
           "weight": 1,
-          "name": "probablychests:chests/normal_items"
+          "value": "probablychests:chests/normal_items"
         },
         {
           "type": "minecraft:loot_table",
           "weight": 1,
-          "name": "probablychests:chests/mixed_items"
+          "value": "probablychests:chests/mixed_items"
         },
         {
           "type": "minecraft:loot_table",
           "weight": 40,
-          "name": "minecraft:chests/end_city_treasure"
+          "value": "minecraft:chests/end_city_treasure"
         }
       ]
     }

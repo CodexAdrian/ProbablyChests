@@ -1,7 +1,7 @@
 {
   "display": {
     "icon": {
-      "item": "probablychests:lush_chest"
+      "id": "probablychests:lush_chest"
     },
     "title": "Carnivorous Storage",
     "description": "Create a pet mimic",

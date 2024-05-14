@@ -14,7 +14,7 @@
     }
   },
   "result": {
-    "item": "probablychests:void_lock",
+    "id": "probablychests:void_lock",
     "count": 1
   }
 }

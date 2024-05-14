@@ -34,6 +34,7 @@ import java.util.UUID;
 public abstract class ServerPlayerEntityMixin extends PlayerEntity implements PlayerEntityAccess {
 
 
+	@Shadow public abstract ServerWorld getServerWorld();
 
 	HashSet<UUID> petMimicList = new HashSet<>();
 
@@ -50,7 +51,7 @@ public abstract class ServerPlayerEntityMixin extends PlayerEntity implements Pl
 	public boolean checkForMimicLimit () {
 		for (Iterator<UUID> i = petMimicList.iterator(); i.hasNext(); ) {
 			UUID mimic = i.next();
-			PCTameablePetWithInventory entity = (PCTameablePetWithInventory) ((ServerWorld) this.world).getEntity(mimic);
+			PCTameablePetWithInventory entity = (PCTameablePetWithInventory) (this.getServerWorld()).getEntity(mimic);
 			if (entity == null || entity.isRemoved()) {
 				i.remove();
 			}
@@ -113,7 +114,7 @@ public abstract class ServerPlayerEntityMixin extends PlayerEntity implements Pl
 		for (Iterator<UUID> i = petMimicList.iterator(); i.hasNext(); ) {
 			UUID mimic = i.next();
 			if (! isMimicInKeepList(mimic)) {
-				PCTameablePetWithInventory entity = (PCTameablePetWithInventory) ((ServerWorld) this.world).getEntity(mimic);
+				PCTameablePetWithInventory entity = (PCTameablePetWithInventory) (this.getServerWorld()).getEntity(mimic);
 				if (entity != null && ! entity.isRemoved()) {
 					entity.setIsAbandoned(true);
 				}

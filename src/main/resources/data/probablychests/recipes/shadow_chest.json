@@ -20,7 +20,7 @@
     }
   },
   "result": {
-    "item": "probablychests:shadow_chest",
+    "id": "probablychests:shadow_chest",
     "count": 1
   }
 }

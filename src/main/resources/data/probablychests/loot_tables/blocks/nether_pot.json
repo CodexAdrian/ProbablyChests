@@ -29,7 +29,7 @@
             },
             {
               "type": "loot_table",
-              "name": "probablychests:blocks/pc_pot_nether"
+              "value": "probablychests:blocks/pc_pot_nether"
             }
           ],
           "conditions": [

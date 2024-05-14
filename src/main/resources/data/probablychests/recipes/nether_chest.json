@@ -20,7 +20,7 @@
     }
   },
   "result": {
-    "item": "probablychests:nether_chest",
+    "id": "probablychests:nether_chest",
     "count": 1
   }
 }

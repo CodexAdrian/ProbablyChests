@@ -1,7 +1,7 @@
 {
   "display": {
     "icon": {
-      "item": "probablychests:normal_chest"
+      "id": "probablychests:normal_chest"
     },
     "title": "Fooled By Furniture",
     "description": "Encounter a secret mimic",
