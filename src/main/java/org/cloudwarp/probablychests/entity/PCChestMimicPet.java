@@ -127,28 +127,32 @@ public class PCChestMimicPet extends PCTameablePetWithInventory implements GeoAn
         eAnimationState.getController().setAnimationSpeed(1D);
         eAnimationState.getController().transitionLength(6);
         eAnimationState.getController().setOverrideEasingType(EasingType.EASE_IN_OUT_SINE);
-        if (state == IS_IN_AIR) {
-            eAnimationState.getController().transitionLength(2);
-            eAnimationState.getController().setAnimation(FLYING);
-        } else if (state == IS_IDLE) {
-            if (this.getIsOpenState()) {
-                eAnimationState.getController().setAnimation(OPENED);
-            } else {
-                if (this.isInSittingPose()) {
-                    eAnimationState.getController().setAnimation(SITTING);
+        switch (state) {
+            case IS_IN_AIR -> {
+                eAnimationState.getController().transitionLength(2);
+                eAnimationState.getController().setAnimation(FLYING);
+            }
+            case IS_IDLE -> {
+                if (this.getIsOpenState()) {
+                    eAnimationState.getController().setAnimation(OPENED);
                 } else {
-                    eAnimationState.getController().setAnimation(STANDING);
+                    if (this.isInSittingPose()) {
+                        eAnimationState.getController().setAnimation(SITTING);
+                    } else {
+                        eAnimationState.getController().setAnimation(STANDING);
+                    }
                 }
             }
-        } else if (state == IS_JUMPING) {
-            eAnimationState.getController().setAnimationSpeed(2D);
-            eAnimationState.getController().setAnimation(JUMP);
-        } else if (state == IS_BITING) {
-            eAnimationState.getController().transitionLength(2);
-            eAnimationState.getController().setAnimationSpeed(1.5D);
-            eAnimationState.getController().setAnimation(BITING);
-        } else {
-            System.out.println("INVALID STATE: " + state);
+            case IS_JUMPING -> {
+                eAnimationState.getController().setAnimationSpeed(2D);
+                eAnimationState.getController().setAnimation(JUMP);
+            }
+            case IS_BITING -> {
+                eAnimationState.getController().transitionLength(2);
+                eAnimationState.getController().setAnimationSpeed(1.5D);
+                eAnimationState.getController().setAnimation(BITING);
+            }
+            default -> System.out.println("INVALID STATE: " + state);
         }
         return PlayState.CONTINUE;
     }
@@ -157,24 +161,27 @@ public class PCChestMimicPet extends PCTameablePetWithInventory implements GeoAn
         int state = this.getMimicState();
         eAnimationState.getController().setAnimationSpeed(1D);
         eAnimationState.getController().transitionLength(6);
-        if (state == IS_IN_AIR) {
-            eAnimationState.getController().transitionLength(2);
-            eAnimationState.getController().setAnimation(FLYING_WAG);
-        } else if (state == IS_IDLE) {
-            if (this.getIsOpenState()) {
-                eAnimationState.getController().setAnimation(IDLE_WAG);
-            } else {
-                if (this.isInSittingPose()) {
-                    eAnimationState.getController().setAnimation(NO_WAG);
+        switch (state) {
+            case IS_IDLE -> {
+                if (this.getIsOpenState()) {
+                    eAnimationState.getController().setAnimation(IDLE_WAG);
                 } else {
-                    eAnimationState.getController().setAnimation(LOW_WAG);
+                    if (this.isInSittingPose()) {
+                        eAnimationState.getController().setAnimation(NO_WAG);
+                    } else {
+                        eAnimationState.getController().setAnimation(LOW_WAG);
+                    }
                 }
             }
-        } else if (state == IS_JUMPING) {
-            eAnimationState.getController().setAnimationSpeed(2D);
-            eAnimationState.getController().setAnimation(FLYING_WAG);
-        } else if (state == IS_BITING) {
-        } else {
+            case IS_JUMPING -> {
+                eAnimationState.getController().setAnimationSpeed(2D);
+                eAnimationState.getController().setAnimation(FLYING_WAG);
+            }
+            case IS_IN_AIR -> {
+                eAnimationState.getController().transitionLength(2);
+                eAnimationState.getController().setAnimation(FLYING_WAG);
+            }
+            default -> System.out.println("INVALID STATE: " + state);
         }
         return PlayState.CONTINUE;
     }
@@ -260,10 +267,6 @@ public class PCChestMimicPet extends PCTameablePetWithInventory implements GeoAn
         }
     }
 
-    protected boolean isDisallowedInPeaceful() {
-        return false;
-    }
-
     public void writeCustomDataToNbt(NbtCompound nbt) {
         super.writeCustomDataToNbt(nbt);
         nbt.putBoolean("wasOnGround", this.onGroundLastTick);
@@ -283,7 +286,7 @@ public class PCChestMimicPet extends PCTameablePetWithInventory implements GeoAn
 
     @Override
     protected void initDataTracker(DataTracker.Builder builder) {
-        builder.add(getMimicStateVariable(), IS_IDLE);
+        builder.add(MIMIC_STATE, IS_IDLE);
         super.initDataTracker(builder);
     }
 
@@ -369,7 +372,7 @@ public class PCChestMimicPet extends PCTameablePetWithInventory implements GeoAn
                 if (livingEntity == null) {
                     return true;
                 } else {
-                    return this.mimic.squaredDistanceTo(livingEntity) < 144.0D && livingEntity.getAttacker() != null ? false : this.mimic.isSitting();
+                    return (!(this.mimic.squaredDistanceTo(livingEntity) < 144.0D) || livingEntity.getAttacker() == null) && this.mimic.isSitting();
                 }
             }
         }

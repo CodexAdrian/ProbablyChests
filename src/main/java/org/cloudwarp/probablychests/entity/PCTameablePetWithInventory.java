@@ -1,6 +1,8 @@
 package org.cloudwarp.probablychests.entity;
 
-import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
+import com.mojang.datafixers.util.Pair;
+import com.mojang.serialization.Codec;
+import io.netty.buffer.ByteBuf;
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.block.BlockState;
@@ -15,6 +17,7 @@ import net.minecraft.entity.attribute.EntityAttributes;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.data.DataTracker;
 import net.minecraft.entity.data.TrackedData;
+import net.minecraft.entity.data.TrackedDataHandler;
 import net.minecraft.entity.data.TrackedDataHandlerRegistry;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
@@ -30,8 +33,9 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtList;
-import net.minecraft.network.PacketByteBuf;
-import net.minecraft.registry.RegistryWrapper;
+import net.minecraft.nbt.NbtOps;
+import net.minecraft.network.codec.PacketCodec;
+import net.minecraft.network.codec.PacketCodecs;
 import net.minecraft.registry.tag.ItemTags;
 import net.minecraft.screen.NamedScreenHandlerFactory;
 import net.minecraft.screen.ScreenHandler;
@@ -58,7 +62,6 @@ import org.cloudwarp.probablychests.registry.PCItems;
 import org.cloudwarp.probablychests.registry.PCSounds;
 import org.cloudwarp.probablychests.screenhandlers.PCMimicScreenHandler;
 import org.cloudwarp.probablychests.utils.PCConfig;
-import org.cloudwarp.probablychests.utils.PCEventHandler;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.EnumSet;
@@ -75,17 +78,17 @@ public abstract class PCTameablePetWithInventory extends TameableEntity implemen
     @Nullable
     private UUID angryAt;
 
-    private static final TrackedData<Integer> MIMIC_STATE;
-    private static final TrackedData<Integer> ANGER_TIME;
-    private static final UniformIntProvider ANGER_TIME_RANGE;
-    private static final TrackedData<Boolean> IS_ABANDONED;
-    private static final TrackedData<Boolean> MIMIC_HAS_LOCK;
-    private static final TrackedData<Boolean> IS_MIMIC_LOCKED;
-    private static final TrackedData<Boolean> IS_OPEN_STATE;
+    protected static final TrackedData<MimicState> MIMIC_STATE;
+    protected static final TrackedData<Integer> ANGER_TIME;
+    protected static final UniformIntProvider ANGER_TIME_RANGE;
+    protected static final TrackedData<Boolean> IS_ABANDONED;
+    protected static final TrackedData<Boolean> MIMIC_HAS_LOCK;
+    protected static final TrackedData<Boolean> IS_MIMIC_LOCKED;
+    protected static final TrackedData<Boolean> IS_OPEN_STATE;
 
 
     static {
-        MIMIC_STATE = DataTracker.registerData(PCTameablePetWithInventory.class, TrackedDataHandlerRegistry.INTEGER);
+        MIMIC_STATE = DataTracker.registerData(PCTameablePetWithInventory.class, TrackedDataHandler.create(MimicState.NETWORK_CODEC));
         ANGER_TIME = DataTracker.registerData(PCTameablePetWithInventory.class, TrackedDataHandlerRegistry.INTEGER);
         IS_ABANDONED = DataTracker.registerData(PCTameablePetWithInventory.class, TrackedDataHandlerRegistry.BOOLEAN);
         MIMIC_HAS_LOCK = DataTracker.registerData(PCTameablePetWithInventory.class, TrackedDataHandlerRegistry.BOOLEAN);
@@ -93,15 +96,6 @@ public abstract class PCTameablePetWithInventory extends TameableEntity implemen
         IS_OPEN_STATE = DataTracker.registerData(PCTameablePetWithInventory.class, TrackedDataHandlerRegistry.BOOLEAN);
         ANGER_TIME_RANGE = TimeHelper.betweenSeconds(20, 39);
     }
-
-    // Mimic States
-    public static final int IS_SLEEPING = 0;
-    public static final int IS_IN_AIR = 1;
-    public static final int IS_IDLE = 2;
-    public static final int IS_JUMPING = 3;
-    public static final int IS_BITING = 4;
-    public static final int IS_LANDING = 5;
-
 
     public int viewerCount = 0;
 
@@ -237,7 +231,7 @@ public abstract class PCTameablePetWithInventory extends TameableEntity implemen
                             } else {
                                 this.bite(player);
                                 this.biteAnimationTimer = 6;
-                                this.setMimicState(IS_BITING);
+                                this.setMimicState(MimicState.BITING);
                             }
                         } else {
                             this.openGui(player);
@@ -295,10 +289,6 @@ public abstract class PCTameablePetWithInventory extends TameableEntity implemen
 
     @Override
     public void onInventoryChanged(Inventory sender) {
-    }
-
-    public TrackedData<Integer> getMimicStateVariable() {
-        return this.MIMIC_STATE;
     }
 
     public void openGui(PlayerEntity player) {
@@ -417,7 +407,7 @@ public abstract class PCTameablePetWithInventory extends TameableEntity implemen
 
     public void writeCustomDataToNbt(NbtCompound nbt) {
         super.writeCustomDataToNbt(nbt);
-        nbt.putInt("state", this.getMimicState());
+        nbt.putString("state", this.getMimicState().toString());
         NbtList listnbt = new NbtList();
         for (int i = 0; i < this.inventory.size(); ++i) {
             ItemStack itemstack = this.inventory.getStack(i);
@@ -427,7 +417,7 @@ public abstract class PCTameablePetWithInventory extends TameableEntity implemen
             listnbt.add(itemstack.encode(getWorld().getRegistryManager(), compoundnbt));
         }
         nbt.put("Inventory", listnbt);
-        nbt.putInt("mimic_state", this.getMimicState());
+        nbt.putString("mimic_state", this.getMimicState().toString());
         nbt.putBoolean("is_abandoned", this.getIsAbandoned());
         nbt.putBoolean("mimic_has_lock", this.getMimicHasLock());
         nbt.putBoolean("is_mimic_locked", this.getIsMimicLocked());
@@ -436,7 +426,7 @@ public abstract class PCTameablePetWithInventory extends TameableEntity implemen
 
     public void readCustomDataFromNbt(NbtCompound nbt) {
         super.readCustomDataFromNbt(nbt);
-        this.setMimicState(nbt.getInt("state"));
+        this.setMimicState(MimicState.valueOf(nbt.getString("state")));
         NbtList listnbt = nbt.getList("Inventory", 10);
         for (int i = 0; i < listnbt.size(); ++i) {
             NbtCompound compoundnbt = listnbt.getCompound(i);
@@ -444,17 +434,17 @@ public abstract class PCTameablePetWithInventory extends TameableEntity implemen
             this.inventory.setStack(j, ItemStack.fromNbt(getWorld().getRegistryManager(), compoundnbt).orElse(ItemStack.EMPTY));
         }
         this.readAngerFromNbt(this.getWorld(), nbt);
-        this.setMimicState(nbt.getInt("mimic_state"));
+        this.setMimicState(nbt.getString("mimic_state"));
         this.setIsAbandoned(nbt.getBoolean("is_abandoned"));
         this.setMimicHasLock(nbt.getBoolean("mimic_has_lock"));
         this.setIsMimicLocked(nbt.getBoolean("is_mimic_locked"));
     }
 
-    public void setMimicState(int state) {
+    public void setMimicState(MimicState state) {
         this.dataTracker.set(MIMIC_STATE, state);
     }
 
-    public int getMimicState() {
+    public MimicState getMimicState() {
         return this.dataTracker.get(MIMIC_STATE);
     }
 
@@ -774,4 +764,14 @@ public abstract class PCTameablePetWithInventory extends TameableEntity implemen
         }
     }
 
+    public enum MimicState {
+        SLEEPING,
+        IDLE,
+        JUMPING,
+        BITING,
+        LANDING;
+
+        public static final PacketCodec<ByteBuf, MimicState> NETWORK_CODEC = PacketCodecs.STRING.xmap(MimicState::valueOf, Enum::name);
+        public static final Codec<MimicState> CODEC = Codec.STRING.xmap(MimicState::valueOf, Enum::name);
+    }
 }

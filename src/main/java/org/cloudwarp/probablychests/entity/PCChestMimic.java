@@ -37,16 +37,11 @@ public class PCChestMimic extends PCTameablePetWithInventory implements GeoAnima
     public static final RawAnimation CLOSE = RawAnimation.begin().then("land", Animation.LoopType.PLAY_ONCE).then("idle", Animation.LoopType.LOOP);
     public static final RawAnimation SLEEPING = RawAnimation.begin().then("sleeping", Animation.LoopType.LOOP);
     public static final RawAnimation FLYING = RawAnimation.begin().then("flying", Animation.LoopType.LOOP);
-    public static final RawAnimation LOW_WAG = RawAnimation.begin().then("lowWag", Animation.LoopType.LOOP);
     public static final RawAnimation FLYING_WAG = RawAnimation.begin().then("flyingWag", Animation.LoopType.LOOP);
     public static final RawAnimation IDLE_WAG = RawAnimation.begin().then("idleWag", Animation.LoopType.LOOP);
     public static final RawAnimation NO_WAG = RawAnimation.begin().then("noWag", Animation.LoopType.LOOP);
     private static final String MIMIC_CONTROLLER = "mimicController";
     private static final String TONGUE_CONTROLLER = "tongueController";
-
-    private static double moveSpeed = 1.5D;
-    private static int maxHealth = 50;
-    private static int maxDamage = 5;
 
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
     private boolean onGroundLastTick;
@@ -64,7 +59,6 @@ public class PCChestMimic extends PCTameablePetWithInventory implements GeoAnima
 
     public static DefaultAttributeContainer.Builder createMobAttributes() {
         MimicDifficulty mimicDifficulty = ProbablyChests.loadedConfig.mimicSettings.mimicDifficulty;
-        moveSpeed = mimicDifficulty.getSpeed();
         return LivingEntity.createLivingAttributes().add(EntityAttributes.GENERIC_FOLLOW_RANGE, 12.0D)
                 .add(EntityAttributes.GENERIC_ATTACK_KNOCKBACK, 2)
                 .add(EntityAttributes.GENERIC_ATTACK_DAMAGE, mimicDifficulty.getDamage())
@@ -87,25 +81,14 @@ public class PCChestMimic extends PCTameablePetWithInventory implements GeoAnima
         int state = this.getMimicState();
         eAnimationState.getController().setAnimationSpeed(1D);
         switch (state) {
-            case IS_SLEEPING:
-                eAnimationState.getController().setAnimation(SLEEPING);
-                break;
-            case IS_IN_AIR:
-                eAnimationState.getController().setAnimation(FLYING);
-                break;
-            case IS_LANDING:
-                eAnimationState.getController().setAnimation(CLOSE);
-                break;
-            case IS_IDLE:
-                eAnimationState.getController().setAnimation(IDLE);
-                break;
-            case IS_JUMPING:
+            case IS_IN_AIR -> eAnimationState.getController().setAnimation(FLYING);
+            case IS_LANDING -> eAnimationState.getController().setAnimation(CLOSE);
+            case IS_IDLE -> eAnimationState.getController().setAnimation(IDLE);
+            case IS_JUMPING -> {
                 eAnimationState.getController().setAnimationSpeed(2D);
                 eAnimationState.getController().setAnimation(JUMP);
-                break;
-            default:
-                eAnimationState.getController().setAnimation(SLEEPING);
-                break;
+            }
+            default -> eAnimationState.getController().setAnimation(SLEEPING);
         }
         return PlayState.CONTINUE;
     }
@@ -114,17 +97,17 @@ public class PCChestMimic extends PCTameablePetWithInventory implements GeoAnima
         int state = this.getMimicState();
         eAnimationState.getController().setAnimationSpeed(1D);
         //eAnimationState.getController().transitionLengthTicks = 1;
-        if (state == IS_IN_AIR) {
-            eAnimationState.getController().setAnimation(FLYING_WAG);
-        } else if (state == IS_IDLE) {
-            eAnimationState.getController().setAnimationSpeed(1.5D);
-            eAnimationState.getController().setAnimation(IDLE_WAG);
-        } else if (state == IS_JUMPING) {
-            eAnimationState.getController().setAnimationSpeed(2D);
-            eAnimationState.getController().setAnimation(FLYING_WAG);
-        } else if (state == IS_SLEEPING) {
-            eAnimationState.getController().setAnimation(NO_WAG);
-        } else {
+        switch (state) {
+            case IS_IN_AIR -> eAnimationState.getController().setAnimation(FLYING_WAG);
+            case IS_IDLE -> {
+                eAnimationState.getController().setAnimationSpeed(1.5D);
+                eAnimationState.getController().setAnimation(IDLE_WAG);
+            }
+            case IS_JUMPING -> {
+                eAnimationState.getController().setAnimationSpeed(2D);
+                eAnimationState.getController().setAnimation(FLYING_WAG);
+            }
+            default -> eAnimationState.getController().setAnimation(NO_WAG);
         }
         return PlayState.CONTINUE;
     }
@@ -248,7 +231,7 @@ public class PCChestMimic extends PCTameablePetWithInventory implements GeoAnima
 
     @Override
     protected void initDataTracker(DataTracker.Builder builder) {
-        builder.add(getMimicStateVariable(), IS_SLEEPING);
+        builder.add(MIMIC_STATE, IS_SLEEPING);
         super.initDataTracker(builder);
     }
 
@@ -279,7 +262,6 @@ public class PCChestMimic extends PCTameablePetWithInventory implements GeoAnima
     public static boolean canSpawn(EntityType<PCChestMimic> pcChestMimicEntityType, ServerWorldAccess serverWorldAccess, SpawnReason spawnReason, BlockPos blockPos, net.minecraft.util.math.random.Random random) {
         return isSpawnDark(serverWorldAccess, blockPos, random);
     }
-
 
     @Override
     public EntityView method_48926() {
