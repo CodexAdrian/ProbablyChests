@@ -1,26 +1,26 @@
 package org.cloudwarp.probablychests.registry;
 
 import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
-import net.minecraft.item.ItemGroup;
-import net.minecraft.item.ItemStack;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.Registry;
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.registry.RegistryKeys;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.item.ItemStack;
 import org.cloudwarp.probablychests.ProbablyChests;
 
 public class PCItemGroups {
 
-    public static final RegistryKey<ItemGroup> ITEM_GROUP = RegistryKey.of(RegistryKeys.ITEM_GROUP, new Identifier(ProbablyChests.MOD_ID, "probablychests"));
+    public static final ResourceKey<CreativeModeTab> ITEM_GROUP = ResourceKey.create(Registries.CREATIVE_MODE_TAB, new ResourceLocation(ProbablyChests.MOD_ID, "probablychests"));
 
     public static void init() {
         Registry.register(
-                Registries.ITEM_GROUP,
+                BuiltInRegistries.CREATIVE_MODE_TAB,
                 ITEM_GROUP,
                 FabricItemGroup.builder()
-                        .displayName(Text.translatable("itemGroup.probablychests.probablychests"))
+                        .title(Component.translatable("itemGroup.probablychests.probablychests"))
                         .icon(() -> new ItemStack(PCBlocks.NORMAL_CHEST))
                         .build()
         );

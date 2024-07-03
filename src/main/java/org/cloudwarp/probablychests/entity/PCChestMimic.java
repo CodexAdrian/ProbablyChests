@@ -1,24 +1,24 @@
 package org.cloudwarp.probablychests.entity;
 
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.SpawnReason;
-import net.minecraft.entity.ai.goal.ActiveTargetGoal;
-import net.minecraft.entity.ai.goal.RevengeGoal;
-import net.minecraft.entity.attribute.DefaultAttributeContainer;
-import net.minecraft.entity.attribute.EntityAttributes;
-import net.minecraft.entity.data.DataTracker;
-import net.minecraft.entity.mob.Monster;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.EntityView;
-import net.minecraft.world.LightType;
-import net.minecraft.world.ServerWorldAccess;
-import net.minecraft.world.World;
-import net.minecraft.world.dimension.DimensionType;
+import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
+import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
+import net.minecraft.world.entity.monster.Enemy;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.EntityGetter;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LightLayer;
+import net.minecraft.world.level.ServerLevelAccessor;
+import net.minecraft.world.level.dimension.DimensionType;
+import net.minecraft.world.phys.Vec3;
 import org.cloudwarp.probablychests.ProbablyChests;
 import org.cloudwarp.probablychests.entity.ai.MimicMoveControl;
 import org.cloudwarp.probablychests.entity.ai.PCMeleeAttackGoal;
@@ -32,7 +32,7 @@ import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.animation.*;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
-public class PCChestMimic extends PCTameablePetWithInventory implements GeoEntity, Monster {
+public class PCChestMimic extends PCTameablePetWithInventory implements GeoEntity, Enemy {
     // Animations
     public static final RawAnimation IDLE = RawAnimation.begin().thenLoop("idle");
     public static final RawAnimation JUMP = RawAnimation.begin().thenPlay("jump").thenLoop("flying");
@@ -52,31 +52,31 @@ public class PCChestMimic extends PCTameablePetWithInventory implements GeoEntit
     private int spawnWaitTimer = 10;
     private boolean isAttemptingToSleep = true;
 
-    public PCChestMimic(EntityType<? extends PCTameablePetWithInventory> entityType, World world) {
+    public PCChestMimic(EntityType<? extends PCTameablePetWithInventory> entityType, Level world) {
         super(entityType, world);
-        this.ignoreCameraFrustum = true;
+        this.noCulling = true;
         this.moveControl = new MimicMoveControl(this);
-        this.experiencePoints = 10;
+        this.xpReward = 10;
     }
 
-    public static DefaultAttributeContainer.Builder createMobAttributes() {
+    public static AttributeSupplier.Builder createMobAttributes() {
         MimicDifficulty mimicDifficulty = ProbablyChests.loadedConfig.mimicSettings.mimicDifficulty;
-        return LivingEntity.createLivingAttributes().add(EntityAttributes.GENERIC_FOLLOW_RANGE, 12.0D)
-                .add(EntityAttributes.GENERIC_ATTACK_KNOCKBACK, 2)
-                .add(EntityAttributes.GENERIC_ATTACK_DAMAGE, mimicDifficulty.getDamage())
-                .add(EntityAttributes.GENERIC_MOVEMENT_SPEED, 1)
-                .add(EntityAttributes.GENERIC_MAX_HEALTH, mimicDifficulty.getHealth())
-                .add(EntityAttributes.GENERIC_KNOCKBACK_RESISTANCE, 0.5D);
+        return LivingEntity.createLivingAttributes().add(Attributes.FOLLOW_RANGE, 12.0D)
+                .add(Attributes.ATTACK_KNOCKBACK, 2)
+                .add(Attributes.ATTACK_DAMAGE, mimicDifficulty.getDamage())
+                .add(Attributes.MOVEMENT_SPEED, 1)
+                .add(Attributes.MAX_HEALTH, mimicDifficulty.getHealth())
+                .add(Attributes.KNOCKBACK_RESISTANCE, 0.5D);
     }
 
 
-    protected void initGoals() {
-        this.goalSelector.add(7, new PCChestMimic.IdleGoal(this));
-        this.goalSelector.add(5, new PCMeleeAttackGoal(this, 1.0, true));
-        this.goalSelector.add(6, new PCChestMimic.SleepGoal(this));
-        this.goalSelector.add(1, new PCChestMimic.SwimmingGoal(this));
-        this.targetSelector.add(3, (new RevengeGoal(this)).setGroupRevenge());
-        this.targetSelector.add(1, new ActiveTargetGoal<>(this, PlayerEntity.class, 10, true, false, livingEntity -> Math.abs(livingEntity.getY() - this.getY()) <= 4.0D));
+    protected void registerGoals() {
+        this.goalSelector.addGoal(7, new PCChestMimic.IdleGoal(this));
+        this.goalSelector.addGoal(5, new PCMeleeAttackGoal(this, 1.0, true));
+        this.goalSelector.addGoal(6, new PCChestMimic.SleepGoal(this));
+        this.goalSelector.addGoal(1, new PCChestMimic.SwimmingGoal(this));
+        this.targetSelector.addGoal(3, (new HurtByTargetGoal(this)).setAlertOthers());
+        this.targetSelector.addGoal(1, new NearestAttackableTargetGoal<>(this, Player.class, 10, true, false, livingEntity -> Math.abs(livingEntity.getY() - this.getY()) <= 4.0D));
     }
 
     private <E extends GeoAnimatable> PlayState chestMovement(AnimationState<E> eAnimationState) {
@@ -123,8 +123,8 @@ public class PCChestMimic extends PCTameablePetWithInventory implements GeoEntit
         return cache;
     }
 
-    protected void jump() {
-        Vec3d vec3d = this.getVelocity();
+    protected void jumpFromGround() {
+        Vec3 vec3d = this.getDeltaMovement();
         LivingEntity livingEntity = this.getTarget();
         double jumpStrength;
         if (livingEntity == null) {
@@ -133,36 +133,36 @@ public class PCChestMimic extends PCTameablePetWithInventory implements GeoEntit
             jumpStrength = livingEntity.getY() - this.getY();
             jumpStrength = jumpStrength <= 0 ? 1.0D : Math.min(jumpStrength / 3.5D + 1.0D, 2.5D);
         }
-        this.setVelocity(vec3d.x, (double) this.getJumpVelocity() * jumpStrength, vec3d.z);
-        this.velocityDirty = true;
-        if (this.isOnGround() && this.jumpEndTimer <= 0) {
+        this.setDeltaMovement(vec3d.x, (double) this.getJumpPower() * jumpStrength, vec3d.z);
+        this.hasImpulse = true;
+        if (this.onGround() && this.jumpEndTimer <= 0) {
             this.jumpEndTimer = 10;
             this.setMimicState(MimicState.JUMPING);
         }
     }
 
     protected boolean canAttack() {
-        return this.canMoveVoluntarily();
+        return this.isEffectiveAi();
     }
 
     protected float getDamageAmount() {
-        return (float) this.getAttributeValue(EntityAttributes.GENERIC_ATTACK_DAMAGE);
+        return (float) this.getAttributeValue(Attributes.ATTACK_DAMAGE);
     }
 
 
-    public boolean tryAttack(Entity target) {
-        boolean bl = target.damage(this.getDamageSources().mobAttack(this), (float) ((int) this.getAttributeValue(EntityAttributes.GENERIC_ATTACK_DAMAGE)));
+    public boolean doHurtTarget(Entity target) {
+        boolean bl = target.hurt(this.damageSources().mobAttack(this), (float) ((int) this.getAttributeValue(Attributes.ATTACK_DAMAGE)));
         if (bl) {
             this.playSound(this.getHurtSound(), this.getSoundVolume(), (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 0.7F);
             this.playSound(PCSounds.MIMIC_BITE, this.getSoundVolume(), 1.5F + getPitchOffset(0.2F));
-            this.applyDamageEffects(this, target);
+            this.doEnchantDamageEffects(this, target);
         }
 
         return bl;
     }
 
     public double squaredDistanceToEntity(LivingEntity entity) {
-        Vec3d vector = entity.getPos();
+        Vec3 vector = entity.position();
         double d = this.getX() - vector.x;
         double e = this.getY() - (vector.y + 0.6D);
         double f = this.getZ() - vector.z;
@@ -171,7 +171,7 @@ public class PCChestMimic extends PCTameablePetWithInventory implements GeoEntit
 
     public void tick() {
         super.tick();
-        if (this.getWorld().isClient()) {
+        if (this.level().isClientSide()) {
             return;
         }
         if (jumpEndTimer >= 0) {
@@ -180,7 +180,7 @@ public class PCChestMimic extends PCTameablePetWithInventory implements GeoEntit
         if (spawnWaitTimer > 0) {
             spawnWaitTimer -= 1;
         } else {
-            if (this.isOnGround()) {
+            if (this.onGround()) {
                 if (this.onGroundLastTick) {
                     if (this.getMimicState() != MimicState.SLEEPING && !isAttemptingToSleep) {
                         timeUntilSleep = 150;
@@ -207,59 +207,59 @@ public class PCChestMimic extends PCTameablePetWithInventory implements GeoEntit
                 }
             }
         }
-        this.onGroundLastTick = this.isOnGround();
+        this.onGroundLastTick = this.onGround();
     }
 
-    protected boolean isDisallowedInPeaceful() {
+    protected boolean shouldDespawnInPeaceful() {
         return true;
     }
 
-    public void writeCustomDataToNbt(NbtCompound nbt) {
-        super.writeCustomDataToNbt(nbt);
+    public void addAdditionalSaveData(CompoundTag nbt) {
+        super.addAdditionalSaveData(nbt);
         nbt.putBoolean("wasOnGround", this.onGroundLastTick);
     }
 
-    public void readCustomDataFromNbt(NbtCompound nbt) {
-        super.readCustomDataFromNbt(nbt);
+    public void readAdditionalSaveData(CompoundTag nbt) {
+        super.readAdditionalSaveData(nbt);
         this.onGroundLastTick = nbt.getBoolean("wasOnGround");
     }
 
     @Override
-    protected void initDataTracker(DataTracker.Builder builder) {
-        builder.add(MIMIC_STATE, MimicState.SLEEPING);
-        super.initDataTracker(builder);
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        builder.define(MIMIC_STATE, MimicState.SLEEPING);
+        super.defineSynchedData(builder);
     }
 
-    public boolean cannotDespawn() {
-        return this.hasVehicle();
+    public boolean requiresCustomPersistence() {
+        return this.isPassenger();
     }
 
-    public boolean canImmediatelyDespawn(double distanceSquared) {
+    public boolean removeWhenFarAway(double distanceSquared) {
         return true;
     }
 
-    public static boolean isSpawnDark(ServerWorldAccess world, BlockPos pos, net.minecraft.util.math.random.Random random) {
-        if (world.getLightLevel(LightType.SKY, pos) > random.nextInt(32)) {
+    public static boolean isSpawnDark(ServerLevelAccessor world, BlockPos pos, net.minecraft.util.RandomSource random) {
+        if (world.getBrightness(LightLayer.SKY, pos) > random.nextInt(32)) {
             return false;
         } else {
-            DimensionType dimensionType = world.getDimension();
+            DimensionType dimensionType = world.dimensionType();
             int i = dimensionType.monsterSpawnBlockLightLimit();
-            if (i < 15 && world.getLightLevel(LightType.BLOCK, pos) > i) {
+            if (i < 15 && world.getBrightness(LightLayer.BLOCK, pos) > i) {
                 return false;
             } else {
                 PCConfig config = ProbablyChests.loadedConfig;
-                int j = world.toServerWorld().isThundering() ? world.getLightLevel(pos, 10) : world.getLightLevel(pos);
-                return j <= dimensionType.monsterSpawnLightTest().get(random) * config.mimicSettings.naturalMimicSpawnRate;
+                int j = world.getLevel().isThundering() ? world.getMaxLocalRawBrightness(pos, 10) : world.getMaxLocalRawBrightness(pos);
+                return j <= dimensionType.monsterSpawnLightTest().sample(random) * config.mimicSettings.naturalMimicSpawnRate;
             }
         }
     }
 
-    public static boolean canSpawn(EntityType<PCChestMimic> pcChestMimicEntityType, ServerWorldAccess serverWorldAccess, SpawnReason spawnReason, BlockPos blockPos, net.minecraft.util.math.random.Random random) {
+    public static boolean canSpawn(EntityType<PCChestMimic> pcChestMimicEntityType, ServerLevelAccessor serverWorldAccess, MobSpawnType spawnReason, BlockPos blockPos, net.minecraft.util.RandomSource random) {
         return isSpawnDark(serverWorldAccess, blockPos, random);
     }
 
     @Override
-    public EntityView method_48926() {
+    public EntityGetter level() {
         return null;
     }
 }

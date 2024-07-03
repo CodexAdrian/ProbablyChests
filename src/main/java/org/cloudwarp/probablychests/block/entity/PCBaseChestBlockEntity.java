@@ -1,27 +1,5 @@
 package org.cloudwarp.probablychests.block.entity;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.block.entity.LootableContainerBlockEntity;
-import net.minecraft.block.entity.ViewerCountManager;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.inventory.Inventories;
-import net.minecraft.inventory.Inventory;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.registry.RegistryWrapper;
-import net.minecraft.screen.ScreenHandler;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvent;
-import net.minecraft.sound.SoundEvents;
-import net.minecraft.state.property.EnumProperty;
-import net.minecraft.text.Text;
-import net.minecraft.util.collection.DefaultedList;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.BlockView;
-import net.minecraft.world.World;
 import org.cloudwarp.probablychests.ProbablyChests;
 import org.cloudwarp.probablychests.block.PCChestTypes;
 import org.cloudwarp.probablychests.registry.PCProperties;
@@ -35,8 +13,30 @@ import software.bernie.geckolib.animation.*;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
 import java.util.UUID;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.core.NonNullList;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.Container;
+import net.minecraft.world.ContainerHelper;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.ContainerOpenersCounter;
+import net.minecraft.world.level.block.entity.RandomizableContainerBlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.EnumProperty;
 
-public class PCBaseChestBlockEntity extends LootableContainerBlockEntity implements GeoBlockEntity {
+public class PCBaseChestBlockEntity extends RandomizableContainerBlockEntity implements GeoBlockEntity {
     public static final RawAnimation CLOSE = RawAnimation.begin().thenPlay("close").thenLoop("closed");
     public static final RawAnimation OPEN = RawAnimation.begin().thenPlay("open").thenLoop("opened");
     public static final EnumProperty<PCChestState> CHEST_STATE = PCProperties.PC_CHEST_STATE;
@@ -51,78 +51,78 @@ public class PCBaseChestBlockEntity extends LootableContainerBlockEntity impleme
     public boolean hasIronLock = false;
     public boolean isLocked = false;
     public UUID owner = null;
-    private final ViewerCountManager stateManager = new ViewerCountManager() {
+    private final ContainerOpenersCounter stateManager = new ContainerOpenersCounter() {
 
         @Override
-        protected void onContainerOpen(World world, BlockPos pos, BlockState state) {
-            PCBaseChestBlockEntity.playSound(world, pos, state, SoundEvents.BLOCK_CHEST_OPEN);
+        protected void onOpen(Level world, BlockPos pos, BlockState state) {
+            PCBaseChestBlockEntity.playSound(world, pos, state, SoundEvents.CHEST_OPEN);
         }
 
         @Override
-        protected void onContainerClose(World world, BlockPos pos, BlockState state) {
-            PCBaseChestBlockEntity.playSound(world, pos, state, SoundEvents.BLOCK_CHEST_CLOSE);
+        protected void onClose(Level world, BlockPos pos, BlockState state) {
+            PCBaseChestBlockEntity.playSound(world, pos, state, SoundEvents.CHEST_CLOSE);
         }
 
         @Override
-        protected void onViewerCountUpdate(World world, BlockPos pos, BlockState state, int oldViewerCount, int newViewerCount) {
+        protected void openerCountChanged(Level world, BlockPos pos, BlockState state, int oldViewerCount, int newViewerCount) {
             PCBaseChestBlockEntity.this.onInvOpenOrClose(world, pos, state, oldViewerCount, newViewerCount);
         }
 
         @Override
-        protected boolean isPlayerViewing(PlayerEntity player) {
-            if (player.currentScreenHandler instanceof PCChestScreenHandler) {
-                Inventory inventory = ((PCChestScreenHandler) player.currentScreenHandler).getInventory();
+        protected boolean isOwnContainer(Player player) {
+            if (player.containerMenu instanceof PCChestScreenHandler) {
+                Container inventory = ((PCChestScreenHandler) player.containerMenu).getInventory();
                 return inventory == PCBaseChestBlockEntity.this;
             }
             return false;
         }
     };
     PCChestTypes type;
-    private DefaultedList<ItemStack> inventory = DefaultedList.ofSize(54, ItemStack.EMPTY);
+    private NonNullList<ItemStack> inventory = NonNullList.withSize(54, ItemStack.EMPTY);
 
     public PCBaseChestBlockEntity(PCChestTypes type, BlockPos pos, BlockState state) {
         super(type.getBlockEntityType(), pos, state);
         this.type = type;
-        this.setHeldStacks(DefaultedList.ofSize(this.size(), ItemStack.EMPTY));
+        this.setItems(NonNullList.withSize(this.getContainerSize(), ItemStack.EMPTY));
     }
 
-    public static int getPlayersLookingInChestCount(BlockView world, BlockPos pos) {
+    public static int getPlayersLookingInChestCount(BlockGetter world, BlockPos pos) {
         BlockEntity blockEntity;
         BlockState blockState = world.getBlockState(pos);
         if (blockState.hasBlockEntity() && (blockEntity = world.getBlockEntity(pos)) instanceof PCBaseChestBlockEntity) {
-            return ((PCBaseChestBlockEntity) blockEntity).stateManager.getViewerCount();
+            return ((PCBaseChestBlockEntity) blockEntity).stateManager.getOpenerCount();
         }
         return 0;
     }
 
     public static void copyInventory(PCBaseChestBlockEntity from, PCBaseChestBlockEntity to) {
-        DefaultedList<ItemStack> defaultedList = from.getHeldStacks();
-        from.setHeldStacks(to.getHeldStacks());
-        to.setHeldStacks(defaultedList);
+        NonNullList<ItemStack> defaultedList = from.getItems();
+        from.setItems(to.getItems());
+        to.setItems(defaultedList);
     }
 
-    public static void playSound(World world, BlockPos pos, BlockState state, SoundEvent soundEvent) {
+    public static void playSound(Level world, BlockPos pos, BlockState state, SoundEvent soundEvent) {
         double d = (double) pos.getX() + 0.5;
         double e = (double) pos.getY() + 0.5;
         double f = (double) pos.getZ() + 0.5;
 
-        world.playSound(null, d, e, f, soundEvent, SoundCategory.BLOCKS, 0.5f, world.random.nextFloat() * 0.1f + 0.9f);
+        world.playSound(null, d, e, f, soundEvent, SoundSource.BLOCKS, 0.5f, world.random.nextFloat() * 0.1f + 0.9f);
     }
 
-    public static void playSound(World world, BlockPos pos, BlockState state, SoundEvent soundEvent, float pitchRange) {
+    public static void playSound(Level world, BlockPos pos, BlockState state, SoundEvent soundEvent, float pitchRange) {
         double d = (double) pos.getX() + 0.5;
         double e = (double) pos.getY() + 0.5;
         double f = (double) pos.getZ() + 0.5;
 
-        world.playSound(null, d, e, f, soundEvent, SoundCategory.BLOCKS, 0.5f, world.random.nextFloat() * 0.1f + pitchRange);
+        world.playSound(null, d, e, f, soundEvent, SoundSource.BLOCKS, 0.5f, world.random.nextFloat() * 0.1f + pitchRange);
     }
 
     @Override
-    protected void readNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup registryLookup) {
-        super.readNbt(nbt, registryLookup);
-        this.inventory = DefaultedList.ofSize(this.size(), ItemStack.EMPTY);
-        if (!this.readLootTable(nbt)) {
-            Inventories.readNbt(nbt, this.inventory, registryLookup);
+    protected void loadAdditional(CompoundTag nbt, HolderLookup.Provider registryLookup) {
+        super.loadAdditional(nbt, registryLookup);
+        this.inventory = NonNullList.withSize(this.getContainerSize(), ItemStack.EMPTY);
+        if (!this.tryLoadLootTable(nbt)) {
+            ContainerHelper.loadAllItems(nbt, this.inventory, registryLookup);
         }
         this.isMimic = nbt.getBoolean("isMimic");
         this.hasGoldLock = nbt.getBoolean("hasGoldLock");
@@ -133,15 +133,15 @@ public class PCBaseChestBlockEntity extends LootableContainerBlockEntity impleme
         this.hasBeenInteractedWith = nbt.getBoolean("hasBeenOpened");
         this.hasMadeMimic = nbt.getBoolean("hasMadeMimic");
         if (nbt.contains("pc_owner")) {
-            this.owner = nbt.getUuid("pc_owner");
+            this.owner = nbt.getUUID("pc_owner");
         }
     }
 
     @Override
-    protected void writeNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup registryLookup) {
-        super.writeNbt(nbt, registryLookup);
-        if (!this.writeLootTable(nbt)) {
-            Inventories.writeNbt(nbt, this.inventory, registryLookup);
+    protected void saveAdditional(CompoundTag nbt, HolderLookup.Provider registryLookup) {
+        super.saveAdditional(nbt, registryLookup);
+        if (!this.trySaveLootTable(nbt)) {
+            ContainerHelper.saveAllItems(nbt, this.inventory, registryLookup);
         }
         nbt.putBoolean("isMimic", this.isMimic);
         nbt.putBoolean("hasGoldLock", this.hasGoldLock);
@@ -152,78 +152,78 @@ public class PCBaseChestBlockEntity extends LootableContainerBlockEntity impleme
         nbt.putBoolean("hasBeenOpened", this.hasBeenInteractedWith);
         nbt.putBoolean("hasMadeMimic", this.hasMadeMimic);
         if (this.owner != null) {
-            nbt.putUuid("pc_owner", this.owner);
+            nbt.putUUID("pc_owner", this.owner);
         }
     }
 
     @Override
-    public void onOpen(PlayerEntity player) {
-        if (!this.removed && !player.isSpectator()) {
-            this.stateManager.openContainer(player, this.getWorld(), this.getPos(), this.getCachedState());
+    public void startOpen(Player player) {
+        if (!this.remove && !player.isSpectator()) {
+            this.stateManager.incrementOpeners(player, this.getLevel(), this.getBlockPos(), this.getBlockState());
         }
     }
 
     @Override
-    public void onClose(PlayerEntity player) {
-        if (!this.removed && !player.isSpectator()) {
-            this.stateManager.closeContainer(player, this.getWorld(), this.getPos(), this.getCachedState());
+    public void stopOpen(Player player) {
+        if (!this.remove && !player.isSpectator()) {
+            this.stateManager.decrementOpeners(player, this.getLevel(), this.getBlockPos(), this.getBlockState());
         }
     }
 
     @Override
-    protected DefaultedList<ItemStack> getHeldStacks() {
+    protected NonNullList<ItemStack> getItems() {
         return this.inventory;
     }
 
     @Override
-    protected void setHeldStacks(DefaultedList<ItemStack> inventory) {
+    protected void setItems(NonNullList<ItemStack> inventory) {
         this.inventory = inventory;
     }
 
     public void onScheduledTick() {
-        if (!this.removed) {
-            this.stateManager.updateViewerCount(this.getWorld(), this.getPos(), this.getCachedState());
+        if (!this.remove) {
+            this.stateManager.recheckOpeners(this.getLevel(), this.getBlockPos(), this.getBlockState());
         }
     }
 
 
-    protected void onInvOpenOrClose(World world, BlockPos pos, BlockState state, int oldViewerCount, int newViewerCount) {
+    protected void onInvOpenOrClose(Level world, BlockPos pos, BlockState state, int oldViewerCount, int newViewerCount) {
         Block block = state.getBlock();
-        world.addSyncedBlockEvent(pos, block, 1, newViewerCount);
+        world.blockEvent(pos, block, 1, newViewerCount);
         if (oldViewerCount != newViewerCount) {
             if (newViewerCount > 0) {
-                world.setBlockState(pos, state.with(CHEST_STATE, PCChestState.OPENED));
+                world.setBlockAndUpdate(pos, state.setValue(CHEST_STATE, PCChestState.OPENED));
             } else {
-                world.setBlockState(pos, state.with(CHEST_STATE, PCChestState.CLOSED));
+                world.setBlockAndUpdate(pos, state.setValue(CHEST_STATE, PCChestState.CLOSED));
             }
         }
     }
 
 
     @Override
-    public boolean onSyncedBlockEvent(int type, int data) {
+    public boolean triggerEvent(int type, int data) {
         if (type == 1) {
             return true;
         }
-        return super.onSyncedBlockEvent(type, data);
+        return super.triggerEvent(type, data);
     }
 
     public PCChestState getChestState() {
-        return this.getCachedState().get(PCBaseChestBlockEntity.CHEST_STATE);
+        return this.getBlockState().getValue(PCBaseChestBlockEntity.CHEST_STATE);
     }
 
     public void setChestState(PCChestState state) {
-        this.getWorld().setBlockState(this.getPos(), this.getCachedState().with(CHEST_STATE, state));
+        this.getLevel().setBlockAndUpdate(this.getBlockPos(), this.getBlockState().setValue(CHEST_STATE, state));
     }
 
     @Override
     @Nullable
-    public ScreenHandler createMenu(int syncId, PlayerInventory inventory, PlayerEntity player) {
+    public AbstractContainerMenu createMenu(int syncId, Inventory inventory, Player player) {
         if (!hasBeenInteractedWith && player.isSpectator()) {
             return null;
         }
-        if (this.checkUnlocked(player)) {
-            generateLoot(inventory.player);
+        if (this.canOpen(player)) {
+            unpackLootTable(inventory.player);
             return PCChestScreenHandler.createScreenHandler(syncId, inventory, this);
         }
         return null;
@@ -250,17 +250,17 @@ public class PCBaseChestBlockEntity extends LootableContainerBlockEntity impleme
     }
 
     @Override
-    protected ScreenHandler createScreenHandler(int syncId, PlayerInventory inventory) {
+    protected AbstractContainerMenu createMenu(int syncId, Inventory inventory) {
         return PCChestScreenHandler.createScreenHandler(syncId, inventory, this);
     }
 
     @Override
-    protected Text getContainerName() {
-        return Text.translatable(getCachedState().getBlock().getTranslationKey());
+    protected Component getDefaultName() {
+        return Component.translatable(getBlockState().getBlock().getDescriptionId());
     }
 
     @Override
-    public int size() {
+    public int getContainerSize() {
         return 54;
     }
 

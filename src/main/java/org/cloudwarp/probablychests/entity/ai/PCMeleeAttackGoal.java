@@ -1,19 +1,18 @@
 package org.cloudwarp.probablychests.entity.ai;
 
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.ai.goal.Goal;
-import net.minecraft.entity.ai.pathing.Path;
-import net.minecraft.entity.mob.PathAwareEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.predicate.entity.EntityPredicates;
-import net.minecraft.util.Hand;
 import org.cloudwarp.probablychests.entity.PCChestMimicPet;
 import org.cloudwarp.probablychests.entity.PCTameablePetWithInventory;
 
 import java.util.EnumSet;
+import net.minecraft.world.entity.EntitySelector;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.PathfinderMob;
+import net.minecraft.world.entity.ai.goal.Goal;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.pathfinder.Path;
 
 public class PCMeleeAttackGoal extends Goal {
-	protected final PathAwareEntity mob;
+	protected final PathfinderMob mob;
 	private final double speed;
 	private final boolean pauseWhenMobIdle;
 	private Path path;
@@ -27,17 +26,17 @@ public class PCMeleeAttackGoal extends Goal {
 	private static final long MAX_ATTACK_TIME = 20L;
 	protected final PCTameablePetWithInventory mimic;
 
-	public PCMeleeAttackGoal (PathAwareEntity mob, double speed, boolean pauseWhenMobIdle) {
+	public PCMeleeAttackGoal (PathfinderMob mob, double speed, boolean pauseWhenMobIdle) {
 		this.mob = mob;
 		this.mimic = (PCTameablePetWithInventory) mob;
 		this.speed = speed;
 		this.pauseWhenMobIdle = pauseWhenMobIdle;
-		this.setControls(EnumSet.of(Goal.Control.MOVE, Goal.Control.LOOK, Control.JUMP));
+		this.setFlags(EnumSet.of(Goal.Flag.MOVE, Goal.Flag.LOOK, Flag.JUMP));
 	}
 
 	@Override
-	public boolean canStart () {
-		long l = this.mob.getWorld().getTime();
+	public boolean canUse () {
+		long l = this.mob.level().getGameTime();
 		if (l - this.lastUpdateTime < 20L) {
 			return false;
 		}
@@ -55,15 +54,15 @@ public class PCMeleeAttackGoal extends Goal {
 		if (this.mimic.getOwner() == livingEntity && this.mimic instanceof PCChestMimicPet) {
 			return false;
 		}
-		this.path = this.mob.getNavigation().findPathTo(livingEntity, 0);
+		this.path = this.mob.getNavigation().createPath(livingEntity, 0);
 		if (this.path != null) {
 			return true;
 		}
-		return this.getSquaredMaxAttackDistance(livingEntity) >= this.mob.squaredDistanceTo(livingEntity.getX(), livingEntity.getY(), livingEntity.getZ());
+		return this.getSquaredMaxAttackDistance(livingEntity) >= this.mob.distanceToSqr(livingEntity.getX(), livingEntity.getY(), livingEntity.getZ());
 	}
 
 	@Override
-	public boolean shouldContinue () {
+	public boolean canContinueToUse () {
 		LivingEntity livingEntity = this.mob.getTarget();
 		if (livingEntity == null) {
 			return false;
@@ -77,15 +76,15 @@ public class PCMeleeAttackGoal extends Goal {
 		if (this.mimic.getOwner() == livingEntity && this.mimic instanceof PCChestMimicPet) {
 			return false;
 		}
-		if (! this.mob.isInWalkTargetRange(livingEntity.getBlockPos())) {
+		if (! this.mob.isWithinRestriction(livingEntity.blockPosition())) {
 			return false;
 		}
-		return ! (livingEntity instanceof PlayerEntity) || ! livingEntity.isSpectator() && ! ((PlayerEntity) livingEntity).isCreative();
+		return ! (livingEntity instanceof Player) || ! livingEntity.isSpectator() && ! ((Player) livingEntity).isCreative();
 	}
 
 	@Override
 	public void start () {
-		this.mob.setAttacking(true);
+		this.mob.setAggressive(true);
 		this.updateCountdownTicks = 0;
 		this.cooldown = 0;
 	}
@@ -93,15 +92,15 @@ public class PCMeleeAttackGoal extends Goal {
 	@Override
 	public void stop () {
 		LivingEntity livingEntity = this.mob.getTarget();
-		if (! EntityPredicates.EXCEPT_CREATIVE_OR_SPECTATOR.test(livingEntity)) {
+		if (! EntitySelector.NO_CREATIVE_OR_SPECTATOR.test(livingEntity)) {
 			this.mob.setTarget(null);
 		}
-		this.mob.setAttacking(false);
+		this.mob.setAggressive(false);
 		this.mob.getNavigation().stop();
 	}
 
 	@Override
-	public boolean shouldRunEveryTick () {
+	public boolean requiresUpdateEveryTick () {
 		return true;
 	}
 
@@ -111,11 +110,11 @@ public class PCMeleeAttackGoal extends Goal {
 		if (livingEntity == null) {
 			return;
 		}
-		this.mimic.lookAtEntity(livingEntity, 10.0F, 10.0F);
-		((MimicMoveControl) this.mimic.getMoveControl()).look(this.mimic.getYaw(), true);
-		double d = this.mob.squaredDistanceTo(livingEntity.getX(), livingEntity.getY(), livingEntity.getZ());
+		this.mimic.lookAt(livingEntity, 10.0F, 10.0F);
+		((MimicMoveControl) this.mimic.getMoveControl()).look(this.mimic.getYRot(), true);
+		double d = this.mob.distanceToSqr(livingEntity.getX(), livingEntity.getY(), livingEntity.getZ());
 		this.updateCountdownTicks = Math.max(this.updateCountdownTicks - 1, 0);
-		if ((this.pauseWhenMobIdle || this.mob.getVisibilityCache().canSee(livingEntity)) && this.updateCountdownTicks <= 0 && (this.targetX == 0.0 && this.targetY == 0.0 && this.targetZ == 0.0 || livingEntity.squaredDistanceTo(this.targetX, this.targetY, this.targetZ) >= 1.0 || this.mob.getRandom().nextFloat() < 0.05f)) {
+		if ((this.pauseWhenMobIdle || this.mob.getSensing().hasLineOfSight(livingEntity)) && this.updateCountdownTicks <= 0 && (this.targetX == 0.0 && this.targetY == 0.0 && this.targetZ == 0.0 || livingEntity.distanceToSqr(this.targetX, this.targetY, this.targetZ) >= 1.0 || this.mob.getRandom().nextFloat() < 0.05f)) {
 			this.targetX = livingEntity.getX();
 			this.targetY = livingEntity.getY();
 			this.targetZ = livingEntity.getZ();
@@ -125,10 +124,10 @@ public class PCMeleeAttackGoal extends Goal {
 			} else if (d > 256.0) {
 				this.updateCountdownTicks += 5;
 			}
-			if (! this.mob.getNavigation().startMovingTo(livingEntity, this.speed)) {
+			if (! this.mob.getNavigation().moveTo(livingEntity, this.speed)) {
 				this.updateCountdownTicks += 15;
 			}
-			this.updateCountdownTicks = this.getTickCount(this.updateCountdownTicks);
+			this.updateCountdownTicks = this.adjustedTickDelay(this.updateCountdownTicks);
 		}
 		this.cooldown = Math.max(this.cooldown - 1, 0);
 		this.attack(livingEntity, d);
@@ -138,12 +137,12 @@ public class PCMeleeAttackGoal extends Goal {
 		double d = this.getSquaredMaxAttackDistance(target);
 		if (squaredDistance <= d && this.cooldown <= 0) {
 			this.resetCooldown();
-			this.mob.tryAttack(target);
+			this.mob.doHurtTarget(target);
 		}
 	}
 
 	protected void resetCooldown () {
-		this.cooldown = this.getTickCount(20);
+		this.cooldown = this.adjustedTickDelay(20);
 	}
 
 	protected boolean isCooledDown () {
@@ -155,11 +154,11 @@ public class PCMeleeAttackGoal extends Goal {
 	}
 
 	protected int getMaxCooldown () {
-		return this.getTickCount(20);
+		return this.adjustedTickDelay(20);
 	}
 
 	protected double getSquaredMaxAttackDistance (LivingEntity entity) {
-		return this.mob.getWidth() * 2.0f * (this.mob.getWidth() * 2.0f) + entity.getWidth();
+		return this.mob.getBbWidth() * 2.0f * (this.mob.getBbWidth() * 2.0f) + entity.getBbWidth();
 	}
 }
 

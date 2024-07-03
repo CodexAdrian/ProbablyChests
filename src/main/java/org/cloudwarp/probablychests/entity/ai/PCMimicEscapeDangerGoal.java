@@ -1,39 +1,39 @@
 package org.cloudwarp.probablychests.entity.ai;
 
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.ai.NoPenaltyTargeting;
-import net.minecraft.entity.ai.goal.Goal;
-import net.minecraft.entity.mob.PathAwareEntity;
-import net.minecraft.registry.tag.FluidTags;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.BlockView;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.EnumSet;
+import net.minecraft.core.BlockPos;
+import net.minecraft.tags.FluidTags;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.PathfinderMob;
+import net.minecraft.world.entity.ai.goal.Goal;
+import net.minecraft.world.entity.ai.util.DefaultRandomPos;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.phys.Vec3;
 
 public class PCMimicEscapeDangerGoal extends Goal {
 	public static final int field_36271 = 1;
-	protected final PathAwareEntity mob;
+	protected final PathfinderMob mob;
 	protected final double speed;
 	protected double targetX;
 	protected double targetY;
 	protected double targetZ;
 	protected boolean active;
 
-	public PCMimicEscapeDangerGoal(PathAwareEntity mob, double speed) {
+	public PCMimicEscapeDangerGoal(PathfinderMob mob, double speed) {
 		this.mob = mob;
 		this.speed = speed;
-		this.setControls(EnumSet.of(Goal.Control.MOVE, Control.JUMP, Control.LOOK));
+		this.setFlags(EnumSet.of(Goal.Flag.MOVE, Flag.JUMP, Flag.LOOK));
 	}
 
 	@Override
-	public boolean canStart() {
+	public boolean canUse() {
 		BlockPos blockPos;
 		if (!this.isInDanger()) {
 			return false;
 		}
-		if (this.mob.isOnFire() && (blockPos = this.locateClosestWater(this.mob.getWorld(), this.mob, 5)) != null) {
+		if (this.mob.isOnFire() && (blockPos = this.locateClosestWater(this.mob.level(), this.mob, 5)) != null) {
 			this.targetX = blockPos.getX();
 			this.targetY = blockPos.getY();
 			this.targetZ = blockPos.getZ();
@@ -43,11 +43,11 @@ public class PCMimicEscapeDangerGoal extends Goal {
 	}
 
 	protected boolean isInDanger() {
-		return this.mob.getAttacker() != null || this.mob.shouldEscapePowderSnow() || this.mob.isOnFire();
+		return this.mob.getLastHurtByMob() != null || this.mob.isFreezing() || this.mob.isOnFire();
 	}
 
 	protected boolean findTarget() {
-		Vec3d vec3d = NoPenaltyTargeting.find(this.mob, 5, 4);
+		Vec3 vec3d = DefaultRandomPos.getPos(this.mob, 5, 4);
 		if (vec3d == null) {
 			return false;
 		}
@@ -63,7 +63,7 @@ public class PCMimicEscapeDangerGoal extends Goal {
 
 	@Override
 	public void start() {
-		this.mob.getNavigation().startMovingTo(this.targetX, this.targetY, this.targetZ, this.speed);
+		this.mob.getNavigation().moveTo(this.targetX, this.targetY, this.targetZ, this.speed);
 		this.active = true;
 	}
 
@@ -73,17 +73,17 @@ public class PCMimicEscapeDangerGoal extends Goal {
 	}
 
 	@Override
-	public boolean shouldContinue() {
-		return !this.mob.getNavigation().isIdle();
+	public boolean canContinueToUse() {
+		return !this.mob.getNavigation().isDone();
 	}
 
 	@Nullable
-	protected BlockPos locateClosestWater(BlockView world, Entity entity, int rangeX) {
-		BlockPos blockPos = entity.getBlockPos();
+	protected BlockPos locateClosestWater(BlockGetter world, Entity entity, int rangeX) {
+		BlockPos blockPos = entity.blockPosition();
 		if (!world.getBlockState(blockPos).getCollisionShape(world, blockPos).isEmpty()) {
 			return null;
 		}
-		return BlockPos.findClosest(entity.getBlockPos(), rangeX, 1, pos -> world.getFluidState((BlockPos)pos).isIn(FluidTags.WATER)).orElse(null);
+		return BlockPos.findClosestMatch(entity.blockPosition(), rangeX, 1, pos -> world.getFluidState((BlockPos)pos).is(FluidTags.WATER)).orElse(null);
 	}
 }
 

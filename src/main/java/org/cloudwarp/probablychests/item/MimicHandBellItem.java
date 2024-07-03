@@ -1,67 +1,67 @@
 package org.cloudwarp.probablychests.item;
 
-import net.minecraft.advancement.criterion.Criteria;
-import net.minecraft.block.Blocks;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.item.TooltipType;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemPlacementContext;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.ItemUsageContext;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvent;
-import net.minecraft.text.Text;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
 import org.cloudwarp.probablychests.interfaces.PlayerEntityAccess;
 import org.cloudwarp.probablychests.registry.PCSounds;
 import org.cloudwarp.probablychests.registry.PCStatistics;
 
 import java.util.List;
+import net.minecraft.advancements.CriteriaTriggers;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.item.context.UseOnContext;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
 
 public class MimicHandBellItem extends Item {
-	public MimicHandBellItem (Settings settings) {
+	public MimicHandBellItem (Properties settings) {
 		super(settings);
 	}
 
 	@Override
-	public ActionResult useOnBlock (ItemUsageContext context) {
+	public InteractionResult useOn (UseOnContext context) {
 
-		World world = context.getWorld();
-		ItemPlacementContext itemPlacementContext = new ItemPlacementContext(context);
-		BlockPos blockPos = itemPlacementContext.getBlockPos();
+		Level world = context.getLevel();
+		BlockPlaceContext itemPlacementContext = new BlockPlaceContext(context);
+		BlockPos blockPos = itemPlacementContext.getClickedPos();
 
-		if (world instanceof ServerWorld serverWorld && context.getPlayer() instanceof  ServerPlayerEntity player) {
-			blockPos = blockPos.offset(context.getSide().getOpposite());
-			if(serverWorld.getBlockState(blockPos).isOf(Blocks.AMETHYST_CLUSTER)){
+		if (world instanceof ServerLevel serverWorld && context.getPlayer() instanceof  ServerPlayer player) {
+			blockPos = blockPos.relative(context.getClickedFace().getOpposite());
+			if(serverWorld.getBlockState(blockPos).is(Blocks.AMETHYST_CLUSTER)){
 				int amount = ((PlayerEntityAccess) player).abandonMimics();
 				if(amount > 0){
-					player.increaseStat(PCStatistics.ABANDONED_MIMICS,amount);
-					Criteria.ITEM_USED_ON_BLOCK.trigger(player,blockPos,context.getStack());
+					player.awardStat(PCStatistics.ABANDONED_MIMICS,amount);
+					CriteriaTriggers.ITEM_USED_ON_BLOCK.trigger(player,blockPos,context.getItemInHand());
 				}
 				playSound(world,blockPos,PCSounds.BELL_HIT_1);
 			}
 		}
-		return ActionResult.success(world.isClient);
+		return InteractionResult.sidedSuccess(world.isClientSide);
 	}
 	@Override
-	public void appendTooltip(ItemStack stack, TooltipContext context, List<Text> tooltip, TooltipType type) {
+	public void appendHoverText(ItemStack stack, TooltipContext context, List<Component> tooltip, TooltipFlag type) {
 		if(Screen.hasShiftDown()){
-			tooltip.add(Text.translatable("item.probablychests.mimicHandBell.tooltip.shift"));
-			tooltip.add(Text.translatable("item.probablychests.mimicHandBell.tooltip.shift2"));
-			tooltip.add(Text.translatable("item.probablychests.mimicHandBell.tooltip.shift3"));
+			tooltip.add(Component.translatable("item.probablychests.mimicHandBell.tooltip.shift"));
+			tooltip.add(Component.translatable("item.probablychests.mimicHandBell.tooltip.shift2"));
+			tooltip.add(Component.translatable("item.probablychests.mimicHandBell.tooltip.shift3"));
 		}else{
-			tooltip.add(Text.translatable("item.probablychests.shift.tooltip"));
+			tooltip.add(Component.translatable("item.probablychests.shift.tooltip"));
 		}
 	}
-	static void playSound (World world, BlockPos pos, SoundEvent soundEvent) {
+	static void playSound (Level world, BlockPos pos, SoundEvent soundEvent) {
 		double d = (double) pos.getX() + 0.5;
 		double e = (double) pos.getY() + 0.5;
 		double f = (double) pos.getZ() + 0.5;
 
-		world.playSound(null, d, e, f, soundEvent, SoundCategory.BLOCKS, 0.8f, world.random.nextFloat() * 0.1f + 0.9f);
+		world.playSound(null, d, e, f, soundEvent, SoundSource.BLOCKS, 0.8f, world.random.nextFloat() * 0.1f + 0.9f);
 	}
 }

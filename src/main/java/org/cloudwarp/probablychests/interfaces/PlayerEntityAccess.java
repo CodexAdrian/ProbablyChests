@@ -1,13 +1,13 @@
 package org.cloudwarp.probablychests.interfaces;
 
-import net.minecraft.inventory.Inventory;
 import org.cloudwarp.probablychests.entity.PCTameablePetWithInventory;
 
 import java.util.UUID;
+import net.minecraft.world.Container;
 
 public interface PlayerEntityAccess {
 
-	void openMimicInventory (PCTameablePetWithInventory horse, Inventory inventory);
+	void openMimicInventory (PCTameablePetWithInventory horse, Container inventory);
 
 	void addPetMimicToOwnedList (UUID mimic);
 

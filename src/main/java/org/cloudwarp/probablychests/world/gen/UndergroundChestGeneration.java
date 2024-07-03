@@ -2,7 +2,6 @@ package org.cloudwarp.probablychests.world.gen;
 
 import net.fabricmc.fabric.api.biome.v1.BiomeModifications;
 import net.fabricmc.fabric.api.biome.v1.BiomeSelectors;
-import net.minecraft.world.gen.GenerationStep;
 import org.cloudwarp.probablychests.ProbablyChests;
 import org.cloudwarp.probablychests.utils.PCConfig;
 import org.cloudwarp.probablychests.world.feature.PCFeatures;

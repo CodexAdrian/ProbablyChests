@@ -5,10 +5,8 @@ import me.shedaniel.autoconfig.ConfigHolder;
 import me.shedaniel.autoconfig.serializer.Toml4jConfigSerializer;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
-import net.minecraft.item.ItemGroup;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.util.Identifier;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.ResourceLocation;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cloudwarp.probablychests.network.PCCommonNetworking;
@@ -25,8 +23,8 @@ public class ProbablyChests implements ModInitializer {
 	public static ConfigHolder<PCConfig> configHolder;
 	public static PCConfig loadedConfig;
 
-	public static Identifier id (String path) {
-		return new Identifier(MOD_ID, path);
+	public static ResourceLocation id (String path) {
+		return new ResourceLocation(MOD_ID, path);
 	}
 
 	@Override
@@ -57,9 +55,9 @@ public class ProbablyChests implements ModInitializer {
 	public static PCConfig getConfig () {
 		return configHolder.getConfig();
 	}
-	public static NbtCompound configToNBT(){
+	public static CompoundTag configToNBT(){
 		PCConfig config = getConfig();
-		NbtCompound nbt = new NbtCompound();
+		CompoundTag nbt = new CompoundTag();
 		nbt.putFloat("pot_spawn_chance", config.worldGen.potSpawnChance);
 		nbt.putFloat("chest_spawn_chance", config.worldGen.chestSpawnChance);
 		nbt.putFloat("surface_chest_spawn_chance", config.worldGen.surfaceChestSpawnChance);
@@ -76,7 +74,7 @@ public class ProbablyChests implements ModInitializer {
 		nbt.putBoolean("enable_locked_chest_owners", config.chestSettings.enableLockedChestOwners);
 		return nbt;
 	}
-	public static PCConfig nbtToConfig(NbtCompound nbt){
+	public static PCConfig nbtToConfig(CompoundTag nbt){
 		PCConfig config = new PCConfig();
 		if(nbt == null){
 			return config;

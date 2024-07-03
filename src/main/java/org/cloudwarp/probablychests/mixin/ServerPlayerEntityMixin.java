@@ -1,25 +1,16 @@
 package org.cloudwarp.probablychests.mixin;
 
 import com.mojang.authlib.GameProfile;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.inventory.Inventory;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.nbt.NbtList;
-import net.minecraft.network.encryption.PlayerPublicKey;
-import net.minecraft.screen.ScreenHandler;
-import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayNetworkHandler;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
+import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.Level;
 import org.cloudwarp.probablychests.ProbablyChests;
 import org.cloudwarp.probablychests.entity.PCTameablePetWithInventory;
 import org.cloudwarp.probablychests.interfaces.PlayerEntityAccess;
-import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -30,15 +21,13 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.UUID;
 
-@Mixin(ServerPlayerEntity.class)
-public abstract class ServerPlayerEntityMixin extends PlayerEntity implements PlayerEntityAccess {
-
-
-	@Shadow public abstract ServerWorld getServerWorld();
+@Mixin(ServerPlayer.class)
+public abstract class ServerPlayerEntityMixin extends Player implements PlayerEntityAccess {
+	@Shadow public abstract ServerLevel serverLevel();
 
 	HashSet<UUID> petMimicList = new HashSet<>();
 
-	public ServerPlayerEntityMixin (World world, BlockPos pos, float yaw, GameProfile gameProfile) {
+	public ServerPlayerEntityMixin (Level world, BlockPos pos, float yaw, GameProfile gameProfile) {
 		super(world, pos, yaw, gameProfile);
 	}
 
@@ -51,7 +40,7 @@ public abstract class ServerPlayerEntityMixin extends PlayerEntity implements Pl
 	public boolean checkForMimicLimit () {
 		for (Iterator<UUID> i = petMimicList.iterator(); i.hasNext(); ) {
 			UUID mimic = i.next();
-			PCTameablePetWithInventory entity = (PCTameablePetWithInventory) (this.getServerWorld()).getEntity(mimic);
+			PCTameablePetWithInventory entity = (PCTameablePetWithInventory) this.serverLevel().getEntity(mimic);
 			if (entity == null || entity.isRemoved()) {
 				i.remove();
 			}
@@ -72,25 +61,25 @@ public abstract class ServerPlayerEntityMixin extends PlayerEntity implements Pl
 		return petMimicList.size();
 	}
 
-	@Inject(at = @At("TAIL"), method = "writeCustomDataToNbt(Lnet/minecraft/nbt/NbtCompound;)V")
-	public void writeCustomDataToNbt (NbtCompound nbt, CallbackInfo ci) {
-		NbtList listnbt = new NbtList();
+	@Inject(at = @At("TAIL"), method = "addAdditionalSaveData")
+	public void writeCustomDataToNbt (CompoundTag nbt, CallbackInfo ci) {
+		ListTag listnbt = new ListTag();
 		for (Iterator<UUID> i = petMimicList.iterator(); i.hasNext(); ) {
 			UUID mimic = i.next();
-			NbtCompound compoundnbt = new NbtCompound();
-			compoundnbt.putUuid("uuid", mimic);
+			CompoundTag compoundnbt = new CompoundTag();
+			compoundnbt.putUUID("uuid", mimic);
 			listnbt.add(compoundnbt);
 
 		}
 		nbt.put("pet_mimics", listnbt);
 	}
 
-	@Inject(at = @At("TAIL"), method = "readCustomDataFromNbt(Lnet/minecraft/nbt/NbtCompound;)V")
-	public void readCustomDataFromNbt (NbtCompound nbt, CallbackInfo ci) {
-		NbtList listnbt = nbt.getList("pet_mimics", 10);
+	@Inject(at = @At("TAIL"), method = "readAdditionalSaveData")
+	public void readCustomDataFromNbt (CompoundTag nbt, CallbackInfo ci) {
+		ListTag listnbt = nbt.getList("pet_mimics", 10);
 		for (int i = 0; i < listnbt.size(); ++ i) {
-			NbtCompound compoundnbt = listnbt.getCompound(i);
-			addPetMimicToOwnedList(compoundnbt.getUuid("uuid"));
+			CompoundTag compoundnbt = listnbt.getCompound(i);
+			addPetMimicToOwnedList(compoundnbt.getUUID("uuid"));
 		}
 	}
 
@@ -114,7 +103,7 @@ public abstract class ServerPlayerEntityMixin extends PlayerEntity implements Pl
 		for (Iterator<UUID> i = petMimicList.iterator(); i.hasNext(); ) {
 			UUID mimic = i.next();
 			if (! isMimicInKeepList(mimic)) {
-				PCTameablePetWithInventory entity = (PCTameablePetWithInventory) (this.getServerWorld()).getEntity(mimic);
+				PCTameablePetWithInventory entity = (PCTameablePetWithInventory) (this.serverLevel()).getEntity(mimic);
 				if (entity != null && ! entity.isRemoved()) {
 					entity.setIsAbandoned(true);
 				}

@@ -3,12 +3,12 @@ package org.cloudwarp.probablychests.registry;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.fabricmc.fabric.api.object.builder.v1.block.FabricBlockSettings;
 import net.minecraft.block.*;
-import net.minecraft.item.BlockItem;
-import net.minecraft.item.Item;
-import net.minecraft.registry.Registries;
-import net.minecraft.registry.Registry;
-import net.minecraft.sound.BlockSoundGroup;
-import net.minecraft.util.Identifier;
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.level.block.Block;
 import org.cloudwarp.probablychests.ProbablyChests;
 import org.cloudwarp.probablychests.block.*;
 
@@ -16,8 +16,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class PCBlocks {
-	private static final Map<Block, Identifier> BLOCKS = new LinkedHashMap<>();
-	private static final Map<Item, Identifier> ITEMS = new LinkedHashMap<>();
+	private static final Map<Block, ResourceLocation> BLOCKS = new LinkedHashMap<>();
+	private static final Map<Item, ResourceLocation> ITEMS = new LinkedHashMap<>();
 
 	//---------------------------
 
@@ -41,20 +41,20 @@ public class PCBlocks {
 	// ------------------------------
 
 	private static <T extends Block> T create (String name, T block, boolean createItem) {
-		BLOCKS.put(block, new Identifier(ProbablyChests.MOD_ID, name));
+		BLOCKS.put(block, new ResourceLocation(ProbablyChests.MOD_ID, name));
 		if (createItem) {
-			BlockItem blockItem = new BlockItem(block, new Item.Settings());
+			BlockItem blockItem = new BlockItem(block, new Item.Properties());
 			ITEMS.put(blockItem, BLOCKS.get(block));
 			ItemGroupEvents.modifyEntriesEvent(PCItemGroups.ITEM_GROUP).register(content -> {
-				content.add(blockItem);
+				content.accept(blockItem);
 			});
 		}
 		return block;
 	}
 
 	public static void init () {
-		BLOCKS.keySet().forEach(block -> Registry.register(Registries.BLOCK, BLOCKS.get(block), block));
-		ITEMS.keySet().forEach(item -> Registry.register(Registries.ITEM, ITEMS.get(item), item));
+		BLOCKS.keySet().forEach(block -> Registry.register(BuiltInRegistries.BLOCK, BLOCKS.get(block), block));
+		ITEMS.keySet().forEach(item -> Registry.register(BuiltInRegistries.ITEM, ITEMS.get(item), item));
 	}
 
 }

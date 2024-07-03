@@ -1,8 +1,8 @@
 package org.cloudwarp.probablychests.utils;
 
-import net.minecraft.util.StringIdentifiable;
+import net.minecraft.util.StringRepresentable;
 
-public enum PCLockedState  implements StringIdentifiable {
+public enum PCLockedState  implements StringRepresentable {
 	LOCKED("locked"),
 	UNLOCKED("unlocked");
 	private final String name;
@@ -12,7 +12,7 @@ public enum PCLockedState  implements StringIdentifiable {
 	}
 
 	@Override
-	public String asString () {
+	public String getSerializedName () {
 		return this.name;
 	}
 }

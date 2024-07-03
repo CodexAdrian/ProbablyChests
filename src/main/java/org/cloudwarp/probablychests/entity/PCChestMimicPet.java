@@ -1,27 +1,37 @@
 package org.cloudwarp.probablychests.entity;
 
-import net.minecraft.component.DataComponentTypes;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.entity.*;
 import net.minecraft.entity.ai.goal.*;
-import net.minecraft.entity.attribute.DefaultAttributeContainer;
-import net.minecraft.entity.attribute.EntityAttributes;
-import net.minecraft.entity.damage.DamageSource;
-import net.minecraft.entity.data.DataTracker;
-import net.minecraft.entity.mob.GhastEntity;
-import net.minecraft.entity.passive.PassiveEntity;
-import net.minecraft.entity.passive.TameableEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.projectile.PersistentProjectileEntity;
-import net.minecraft.inventory.SimpleInventory;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.registry.tag.ItemTags;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.Hand;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.EntityView;
-import net.minecraft.world.World;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.tags.ItemTags;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.SimpleContainer;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.AgeableMob;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.OwnableEntity;
+import net.minecraft.world.entity.TamableAnimal;
+import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.ai.goal.Goal;
+import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
+import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
+import net.minecraft.world.entity.ai.goal.target.OwnerHurtByTargetGoal;
+import net.minecraft.world.entity.ai.goal.target.OwnerHurtTargetGoal;
+import net.minecraft.world.entity.ai.goal.target.ResetUniversalAngerTargetGoal;
+import net.minecraft.world.entity.monster.Ghast;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.entity.projectile.AbstractArrow;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.EntityGetter;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
 import org.cloudwarp.probablychests.block.PCChestTypes;
 import org.cloudwarp.probablychests.entity.ai.MimicMoveControl;
 import org.cloudwarp.probablychests.entity.ai.PCMeleeAttackGoal;
@@ -32,12 +42,11 @@ import software.bernie.geckolib.animatable.GeoAnimatable;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.animation.*;
-import software.bernie.geckolib.animation.AnimationState;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
 import java.util.EnumSet;
 
-public class PCChestMimicPet extends PCTameablePetWithInventory implements GeoEntity, Tameable {
+public class PCChestMimicPet extends PCTameablePetWithInventory implements GeoEntity, OwnableEntity {
     // Animations
     public static final RawAnimation IDLE = RawAnimation.begin().then("idle", Animation.LoopType.LOOP);
     public static final RawAnimation JUMP = RawAnimation.begin().then("jump", Animation.LoopType.PLAY_ONCE).then("flying", Animation.LoopType.LOOP);
@@ -57,7 +66,7 @@ public class PCChestMimicPet extends PCTameablePetWithInventory implements GeoEn
     private static final String TONGUE_CONTROLLER = "tongueController";
 
 
-    public SimpleInventory inventory = new SimpleInventory(54);
+    public SimpleContainer inventory = new SimpleContainer(54);
     PCChestTypes type;
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
     private boolean onGroundLastTick;
@@ -65,38 +74,38 @@ public class PCChestMimicPet extends PCTameablePetWithInventory implements GeoEn
     private int spawnWaitTimer = 5;
 
 
-    public PCChestMimicPet(EntityType<? extends PCTameablePetWithInventory> entityType, World world) {
+    public PCChestMimicPet(EntityType<? extends PCTameablePetWithInventory> entityType, Level world) {
         super(entityType, world);
         this.type = PCChestTypes.NORMAL;
-        this.ignoreCameraFrustum = true;
+        this.noCulling = true;
         this.inventory.addListener(this);
         this.moveControl = new MimicMoveControl(this);
     }
 
-    public static DefaultAttributeContainer.Builder createMobAttributes() {
-        return LivingEntity.createLivingAttributes().add(EntityAttributes.GENERIC_FOLLOW_RANGE, 12.0D)
-                .add(EntityAttributes.GENERIC_ATTACK_KNOCKBACK, 2)
-                .add(EntityAttributes.GENERIC_ATTACK_DAMAGE, 5)
-                .add(EntityAttributes.GENERIC_MOVEMENT_SPEED, 1)
-                .add(EntityAttributes.GENERIC_MAX_HEALTH, 30)
-                .add(EntityAttributes.GENERIC_KNOCKBACK_RESISTANCE, 0.5D);
+    public static AttributeSupplier.Builder createMobAttributes() {
+        return LivingEntity.createLivingAttributes().add(Attributes.FOLLOW_RANGE, 12.0D)
+                .add(Attributes.ATTACK_KNOCKBACK, 2)
+                .add(Attributes.ATTACK_DAMAGE, 5)
+                .add(Attributes.MOVEMENT_SPEED, 1)
+                .add(Attributes.MAX_HEALTH, 30)
+                .add(Attributes.KNOCKBACK_RESISTANCE, 0.5D);
     }
 
-    protected void initGoals() {
-        this.goalSelector.add(1, new PCTameablePetWithInventory.SwimmingGoal(this));
-        this.goalSelector.add(2, new SitGoal(this));
+    protected void registerGoals() {
+        this.goalSelector.addGoal(1, new PCTameablePetWithInventory.SwimmingGoal(this));
+        this.goalSelector.addGoal(2, new SitGoal(this));
         //this.goalSelector.add(1, new PetMimicEscapeDangerGoal(1.5));
-        this.goalSelector.add(5, new PCMeleeAttackGoal(this, 1.0, true));
-        this.goalSelector.add(6, new FollowOwnerGoal(this, 1, 5, 2, false));
-        this.targetSelector.add(1, new TrackOwnerAttackerGoal(this));
-        this.targetSelector.add(3, (new RevengeGoal(this, new Class[0])).setGroupRevenge(new Class[0]));
-        this.targetSelector.add(2, new AttackWithOwnerGoal(this));
-        this.targetSelector.add(8, new UniversalAngerGoal<>(this, true));
-        this.targetSelector.add(4, new ActiveTargetGoal<>(this, PlayerEntity.class, 10, true, false, this::shouldAngerAt));
+        this.goalSelector.addGoal(5, new PCMeleeAttackGoal(this, 1.0, true));
+        this.goalSelector.addGoal(6, new FollowOwnerGoal(this, 1, 5, 2, false));
+        this.targetSelector.addGoal(1, new OwnerHurtByTargetGoal(this));
+        this.targetSelector.addGoal(3, (new HurtByTargetGoal(this, new Class[0])).setAlertOthers(new Class[0]));
+        this.targetSelector.addGoal(2, new OwnerHurtTargetGoal(this));
+        this.targetSelector.addGoal(8, new ResetUniversalAngerTargetGoal<>(this, true));
+        this.targetSelector.addGoal(4, new NearestAttackableTargetGoal<>(this, Player.class, 10, true, false, this::isAngryAt));
     }
 
     @Override
-    public EntityView method_48926() {
+    public EntityGetter level() {
         return null;
     }
 
@@ -108,18 +117,18 @@ public class PCChestMimicPet extends PCTameablePetWithInventory implements GeoEn
 
         @Override
         protected boolean isInDanger() {
-            return this.mob.shouldEscapePowderSnow() || this.mob.isOnFire();
+            return this.mob.isFreezing() || this.mob.isOnFire();
         }
     }
 
     @Override
-    public boolean isBreedingItem(ItemStack stack) {
-        return stack.contains(DataComponentTypes.FOOD) && stack.isIn(ItemTags.WOLF_FOOD);
+    public boolean isFood(ItemStack stack) {
+        return stack.has(DataComponents.FOOD) && stack.is(ItemTags.WOLF_FOOD);
     }
 
     @Override
-    public ActionResult interactMob(PlayerEntity player, Hand hand) {
-        return super.interactMob(player, hand);
+    public InteractionResult mobInteract(Player player, InteractionHand hand) {
+        return super.mobInteract(player, hand);
     }
 
     private <E extends GeoAnimatable> PlayState chestMovement(AnimationState<E> eAnimationState) {
@@ -197,8 +206,8 @@ public class PCChestMimicPet extends PCTameablePetWithInventory implements GeoEn
         return cache;
     }
 
-    protected void jump() {
-        Vec3d vec3d = this.getVelocity();
+    protected void jumpFromGround() {
+        Vec3 vec3d = this.getDeltaMovement();
         LivingEntity livingEntity = this.getTarget();
         double jumpStrength;
         if (livingEntity == null) {
@@ -208,9 +217,9 @@ public class PCChestMimicPet extends PCTameablePetWithInventory implements GeoEn
             jumpStrength = jumpStrength <= 0 ? 1D : jumpStrength / 3.5D + 1.0D;
         }
         //moveSpeed = this.world.random.nextDouble(1.5D,2.1D);
-        this.setVelocity(vec3d.x, (double) this.getJumpVelocity() * jumpStrength, vec3d.z);
-        this.velocityDirty = true;
-        if (this.isOnGround() && this.jumpEndTimer <= 0) {
+        this.setDeltaMovement(vec3d.x, (double) this.getJumpPower() * jumpStrength, vec3d.z);
+        this.hasImpulse = true;
+        if (this.onGround() && this.jumpEndTimer <= 0) {
             this.jumpEndTimer = 10;
             this.setMimicState(MimicState.JUMPING);
         }
@@ -221,16 +230,16 @@ public class PCChestMimicPet extends PCTameablePetWithInventory implements GeoEn
         return 10;
     }
 
-    public void tickMovement() {
-        super.tickMovement();
-        if (!this.getWorld().isClient) {
-            this.tickAngerLogic((ServerWorld) this.getWorld(), true);
+    public void aiStep() {
+        super.aiStep();
+        if (!this.level().isClientSide) {
+            this.updatePersistentAnger((ServerLevel) this.level(), true);
         }
     }
 
     public void tick() {
         super.tick();
-        if (this.getWorld().isClient()) {
+        if (this.level().isClientSide()) {
             return;
         }
         if (jumpEndTimer >= 0) {
@@ -239,7 +248,7 @@ public class PCChestMimicPet extends PCTameablePetWithInventory implements GeoEn
         if (biteAnimationTimer > 0) {
             biteAnimationTimer -= 1;
         }
-        if (this.isOnGround()) {
+        if (this.onGround()) {
             if (!this.onGroundLastTick) {
                 this.playSound(this.getLandingSound(), this.getSoundVolume(), ((this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F) / 0.8F);
             }
@@ -255,37 +264,37 @@ public class PCChestMimicPet extends PCTameablePetWithInventory implements GeoEn
                 }
             }
         }
-        this.onGroundLastTick = this.isOnGround();
+        this.onGroundLastTick = this.onGround();
         if (this.getIsAbandoned()) {
             this.setMimicState(MimicState.IDLE);
         }
     }
 
-    public void writeCustomDataToNbt(NbtCompound nbt) {
-        super.writeCustomDataToNbt(nbt);
+    public void addAdditionalSaveData(CompoundTag nbt) {
+        super.addAdditionalSaveData(nbt);
         nbt.putBoolean("wasOnGround", this.onGroundLastTick);
     }
 
-    public void readCustomDataFromNbt(NbtCompound nbt) {
-        super.readCustomDataFromNbt(nbt);
+    public void readAdditionalSaveData(CompoundTag nbt) {
+        super.readAdditionalSaveData(nbt);
         this.onGroundLastTick = nbt.getBoolean("wasOnGround");
     }
 
 
     @Nullable
     @Override
-    public PassiveEntity createChild(ServerWorld world, PassiveEntity entity) {
+    public AgeableMob getBreedOffspring(ServerLevel world, AgeableMob entity) {
         return null;
     }
 
     @Override
-    protected void initDataTracker(DataTracker.Builder builder) {
-        builder.add(MIMIC_STATE, MimicState.IDLE);
-        super.initDataTracker(builder);
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        builder.define(MIMIC_STATE, MimicState.IDLE);
+        super.defineSynchedData(builder);
     }
 
     @Override
-    public boolean canBeLeashedBy(PlayerEntity player) {
+    public boolean canBeLeashed(Player player) {
         return false;
     }
 
@@ -347,26 +356,26 @@ public class PCChestMimicPet extends PCTameablePetWithInventory implements GeoEn
 
         public SitGoal(PCChestMimicPet mimic) {
             this.mimic = mimic;
-            this.setControls(EnumSet.of(Control.JUMP, Control.MOVE));
+            this.setFlags(EnumSet.of(Flag.JUMP, Flag.MOVE));
         }
 
-        public boolean shouldContinue() {
-            return this.mimic.isSitting();
+        public boolean canContinueToUse() {
+            return this.mimic.isOrderedToSit();
         }
 
-        public boolean canStart() {
-            if (!this.mimic.isTamed()) {
+        public boolean canUse() {
+            if (!this.mimic.isTame()) {
                 return false;
-            } else if (this.mimic.isInsideWaterOrBubbleColumn()) {
+            } else if (this.mimic.isInWaterOrBubble()) {
                 return false;
-            } else if (!this.mimic.isOnGround()) {
+            } else if (!this.mimic.onGround()) {
                 return false;
             } else {
                 LivingEntity livingEntity = this.mimic.getOwner();
                 if (livingEntity == null) {
                     return true;
                 } else {
-                    return (!(this.mimic.squaredDistanceTo(livingEntity) < 144.0D) || livingEntity.getAttacker() == null) && this.mimic.isSitting();
+                    return (!(this.mimic.distanceToSqr(livingEntity) < 144.0D) || livingEntity.getLastHurtByMob() == null) && this.mimic.isOrderedToSit();
                 }
             }
         }
@@ -381,48 +390,48 @@ public class PCChestMimicPet extends PCTameablePetWithInventory implements GeoEn
         }
     }
 
-    public boolean tryAttack(Entity target) {
-        boolean bl = target.damage(this.getDamageSources().mobAttack(this), (float) ((int) this.getAttributeValue(EntityAttributes.GENERIC_ATTACK_DAMAGE)));
+    public boolean doHurtTarget(Entity target) {
+        boolean bl = target.hurt(this.damageSources().mobAttack(this), (float) ((int) this.getAttributeValue(Attributes.ATTACK_DAMAGE)));
         if (bl) {
             this.playSound(this.getHurtSound(), this.getSoundVolume(), (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 0.7F);
             this.playSound(PCSounds.MIMIC_BITE, this.getSoundVolume(), 1.5F + getPitchOffset(0.2F));
-            this.applyDamageEffects(this, target);
+            this.doEnchantDamageEffects(this, target);
         }
 
         return bl;
     }
 
 
-    public boolean canAttackWithOwner(LivingEntity target, LivingEntity owner) {
-        if (!(target instanceof GhastEntity) || this.getIsAbandoned()) {
+    public boolean wantsToAttack(LivingEntity target, LivingEntity owner) {
+        if (!(target instanceof Ghast) || this.getIsAbandoned()) {
             if (target instanceof PCChestMimicPet) {
                 PCChestMimicPet mimic = (PCChestMimicPet) target;
-                return !mimic.isTamed() || mimic.getOwner() != owner;
-            } else if (target instanceof PlayerEntity && owner instanceof PlayerEntity && !((PlayerEntity) owner).shouldDamagePlayer((PlayerEntity) target)) {
+                return !mimic.isTame() || mimic.getOwner() != owner;
+            } else if (target instanceof Player && owner instanceof Player && !((Player) owner).canHarmPlayer((Player) target)) {
                 return false;
             } else {
-                return !(target instanceof TameableEntity) || !((TameableEntity) target).isTamed();
+                return !(target instanceof TamableAnimal) || !((TamableAnimal) target).isTame();
             }
         } else {
             return false;
         }
     }
 
-    public boolean damage(DamageSource source, float amount) {
+    public boolean hurt(DamageSource source, float amount) {
         if (this.isInvulnerableTo(source)) {
             return false;
         } else {
-            Entity entity = source.getAttacker();
-            if (!this.getWorld().isClient) {
-                this.setSitting(false);
+            Entity entity = source.getEntity();
+            if (!this.level().isClientSide) {
+                this.setOrderedToSit(false);
                 this.setMimicState(MimicState.IDLE);
             }
 
-            if (entity != null && !(entity instanceof PlayerEntity) && !(entity instanceof PersistentProjectileEntity)) {
+            if (entity != null && !(entity instanceof Player) && !(entity instanceof AbstractArrow)) {
                 amount = (amount + 1.0F) / 2.0F;
             }
 
-            return super.damage(source, amount);
+            return super.hurt(source, amount);
         }
     }
 

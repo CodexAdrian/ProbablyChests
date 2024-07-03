@@ -1,8 +1,8 @@
 package org.cloudwarp.probablychests.utils;
 
-import net.minecraft.util.StringIdentifiable;
+import net.minecraft.util.StringRepresentable;
 
-public enum PCChestState implements StringIdentifiable {
+public enum PCChestState implements StringRepresentable {
 	OPENED("opened"),
 	CLOSED("closed");
 
@@ -14,7 +14,7 @@ public enum PCChestState implements StringIdentifiable {
 	}
 
 	@Override
-	public String asString () {
+	public String getSerializedName () {
 		return this.name;
 	}
 }

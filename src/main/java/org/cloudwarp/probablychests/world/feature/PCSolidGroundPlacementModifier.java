@@ -2,22 +2,21 @@ package org.cloudwarp.probablychests.world.feature;
 
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.random.Random;
-import net.minecraft.world.StructureWorldAccess;
-import net.minecraft.world.gen.blockpredicate.BlockPredicate;
-import net.minecraft.world.gen.feature.FeaturePlacementContext;
-import net.minecraft.world.gen.placementmodifier.PlacementModifier;
-import net.minecraft.world.gen.placementmodifier.PlacementModifierType;
-
 import java.util.stream.Stream;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.WorldGenLevel;
+import net.minecraft.world.level.levelgen.blockpredicates.BlockPredicate;
+import net.minecraft.world.level.levelgen.placement.PlacementContext;
+import net.minecraft.world.level.levelgen.placement.PlacementModifier;
+import net.minecraft.world.level.levelgen.placement.PlacementModifierType;
 
 public class PCSolidGroundPlacementModifier extends PlacementModifier {
 
 
 	public static final MapCodec<PCSolidGroundPlacementModifier> MODIFIER_CODEC = RecordCodecBuilder.mapCodec((instance) -> instance.group(
-			(BlockPredicate.BASE_CODEC.fieldOf("target_condition")).forGetter(PCSolidGroundPlacementModifier -> PCSolidGroundPlacementModifier.targetPredicate)
+			(BlockPredicate.CODEC.fieldOf("target_condition")).forGetter(PCSolidGroundPlacementModifier -> PCSolidGroundPlacementModifier.targetPredicate)
 	).apply(instance, PCSolidGroundPlacementModifier::new));
 	//---------------------------------------------------
 
@@ -35,10 +34,10 @@ public class PCSolidGroundPlacementModifier extends PlacementModifier {
 	}
 
 	@Override
-	public Stream<BlockPos> getPositions (FeaturePlacementContext context, Random random, BlockPos pos) {
-		BlockPos.Mutable mutableTarget = pos.mutableCopy();
+	public Stream<BlockPos> count (PlacementContext context, RandomSource random, BlockPos pos) {
+		BlockPos.MutableBlockPos mutableTarget = pos.mutable();
 		mutableTarget.move(Direction.DOWN);
-		StructureWorldAccess structureWorldAccess = context.getWorld();
+		WorldGenLevel structureWorldAccess = context.getLevel();
 		if (this.targetPredicate.test(structureWorldAccess, mutableTarget)) {
 			return Stream.of(pos);
 		}
@@ -46,7 +45,7 @@ public class PCSolidGroundPlacementModifier extends PlacementModifier {
 	}
 
 	@Override
-	public PlacementModifierType<?> getType () {
+	public PlacementModifierType<?> type () {
 		return PCPlacementModifierType.SOLID_CHECK;
 	}
 }

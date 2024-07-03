@@ -1,29 +1,28 @@
 package org.cloudwarp.probablychests.registry;
 
 import com.google.common.collect.Sets;
-import net.minecraft.util.Identifier;
-
 import java.util.Set;
+import net.minecraft.resources.ResourceLocation;
 
 public class PCLootTables {
 
-	private static final Set<Identifier> PC_LOOT_TABLES = Sets.newHashSet();
+	private static final Set<ResourceLocation> PC_LOOT_TABLES = Sets.newHashSet();
 
-	public static Identifier LUSH_CHEST;
-	public static Identifier NORMAL_CHEST;
-	public static Identifier ROCKY_CHEST;
-	public static Identifier STONE_CHEST;
-	public static Identifier GOLD_CHEST;
-	public static Identifier NETHER_CHEST;
-	public static Identifier SHADOW_CHEST;
-	public static Identifier ICE_CHEST;
-	public static Identifier CORAL_CHEST;
+	public static ResourceLocation LUSH_CHEST;
+	public static ResourceLocation NORMAL_CHEST;
+	public static ResourceLocation ROCKY_CHEST;
+	public static ResourceLocation STONE_CHEST;
+	public static ResourceLocation GOLD_CHEST;
+	public static ResourceLocation NETHER_CHEST;
+	public static ResourceLocation SHADOW_CHEST;
+	public static ResourceLocation ICE_CHEST;
+	public static ResourceLocation CORAL_CHEST;
 
-	private static Identifier register (String id) {
-		return PCLootTables.registerLootTable(new Identifier(id));
+	private static ResourceLocation register (String id) {
+		return PCLootTables.registerLootTable(new ResourceLocation(id));
 	}
 
-	private static Identifier registerLootTable (Identifier id) {
+	private static ResourceLocation registerLootTable (ResourceLocation id) {
 		if (PC_LOOT_TABLES.add(id)) {
 			return id;
 		}

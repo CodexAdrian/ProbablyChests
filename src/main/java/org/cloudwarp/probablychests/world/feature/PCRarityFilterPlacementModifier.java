@@ -1,15 +1,15 @@
 package org.cloudwarp.probablychests.world.feature;
 
 import com.mojang.serialization.MapCodec;
-import net.minecraft.util.dynamic.Codecs;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.random.Random;
-import net.minecraft.world.gen.feature.FeaturePlacementContext;
-import net.minecraft.world.gen.placementmodifier.AbstractConditionalPlacementModifier;
-import net.minecraft.world.gen.placementmodifier.PlacementModifierType;
+import net.minecraft.core.BlockPos;
+import net.minecraft.util.ExtraCodecs;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.levelgen.placement.PlacementContext;
+import net.minecraft.world.level.levelgen.placement.PlacementFilter;
+import net.minecraft.world.level.levelgen.placement.PlacementModifierType;
 
-public class PCRarityFilterPlacementModifier extends AbstractConditionalPlacementModifier {
-	public static final MapCodec<PCRarityFilterPlacementModifier> MODIFIER_CODEC = Codecs.POSITIVE_FLOAT.fieldOf("chance").xmap(PCRarityFilterPlacementModifier::new, (PCRarityFilterPlacementModifier) -> {
+public class PCRarityFilterPlacementModifier extends PlacementFilter {
+	public static final MapCodec<PCRarityFilterPlacementModifier> MODIFIER_CODEC = ExtraCodecs.POSITIVE_FLOAT.fieldOf("chance").xmap(PCRarityFilterPlacementModifier::new, (PCRarityFilterPlacementModifier) -> {
 		return PCRarityFilterPlacementModifier.chance;
 	});
 
@@ -23,11 +23,11 @@ public class PCRarityFilterPlacementModifier extends AbstractConditionalPlacemen
 		return new PCRarityFilterPlacementModifier(chance);
 	}
 
-	protected boolean shouldPlace (FeaturePlacementContext context, Random random, BlockPos pos) {
+	protected boolean shouldPlace (PlacementContext context, RandomSource random, BlockPos pos) {
 		return random.nextFloat() < this.chance;
 	}
 
-	public PlacementModifierType<?> getType () {
+	public PlacementModifierType<?> type () {
 		return PCPlacementModifierType.PC_RARITY;
 	}
 }

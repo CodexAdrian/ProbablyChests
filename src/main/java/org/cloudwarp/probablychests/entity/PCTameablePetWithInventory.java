@@ -4,53 +4,62 @@ import com.mojang.serialization.Codec;
 import io.netty.buffer.ByteBuf;
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.LeavesBlock;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.component.type.FoodComponent;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.entity.*;
-import net.minecraft.entity.ai.goal.Goal;
 import net.minecraft.entity.ai.pathing.*;
-import net.minecraft.entity.attribute.DefaultAttributeContainer;
-import net.minecraft.entity.attribute.EntityAttributes;
-import net.minecraft.entity.damage.DamageSource;
-import net.minecraft.entity.data.DataTracker;
-import net.minecraft.entity.data.TrackedData;
-import net.minecraft.entity.data.TrackedDataHandler;
-import net.minecraft.entity.data.TrackedDataHandlerRegistry;
-import net.minecraft.entity.effect.StatusEffectInstance;
-import net.minecraft.entity.effect.StatusEffects;
-import net.minecraft.entity.mob.Angerable;
-import net.minecraft.entity.passive.PassiveEntity;
-import net.minecraft.entity.passive.TameableEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.inventory.Inventory;
-import net.minecraft.inventory.InventoryChangedListener;
-import net.minecraft.inventory.SimpleInventory;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.nbt.NbtList;
-import net.minecraft.network.codec.PacketCodec;
-import net.minecraft.network.codec.PacketCodecs;
-import net.minecraft.registry.tag.ItemTags;
-import net.minecraft.screen.NamedScreenHandlerFactory;
-import net.minecraft.screen.ScreenHandler;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvent;
-import net.minecraft.sound.SoundEvents;
-import net.minecraft.text.Text;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.Hand;
-import net.minecraft.util.TimeHelper;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.intprovider.UniformIntProvider;
-import net.minecraft.world.World;
-import net.minecraft.world.WorldView;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.codec.ByteBufCodecs;
+import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.tags.ItemTags;
+import net.minecraft.util.Mth;
+import net.minecraft.util.TimeUtil;
+import net.minecraft.util.valueproviders.UniformInt;
+import net.minecraft.world.Container;
+import net.minecraft.world.ContainerListener;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.MenuProvider;
+import net.minecraft.world.SimpleContainer;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.AgeableMob;
+import net.minecraft.world.entity.EntityDimensions;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.NeutralMob;
+import net.minecraft.world.entity.OwnableEntity;
+import net.minecraft.world.entity.Pose;
+import net.minecraft.world.entity.TamableAnimal;
+import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.ai.goal.Goal;
+import net.minecraft.world.entity.ai.navigation.FlyingPathNavigation;
+import net.minecraft.world.entity.ai.navigation.GroundPathNavigation;
+import net.minecraft.world.entity.ai.navigation.PathNavigation;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.food.FoodProperties;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.block.LeavesBlock;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.pathfinder.PathType;
+import net.minecraft.world.level.pathfinder.WalkNodeEvaluator;
 import org.cloudwarp.probablychests.ProbablyChests;
 import org.cloudwarp.probablychests.block.PCChestTypes;
 import org.cloudwarp.probablychests.entity.ai.MimicMoveControl;
@@ -69,31 +78,31 @@ import java.util.UUID;
 import static org.cloudwarp.probablychests.utils.PCMimicCreationUtils.convertHostileMimicToPet;
 import static org.cloudwarp.probablychests.utils.PCMimicCreationUtils.convertPetMimicToHostile;
 
-public abstract class PCTameablePetWithInventory extends TameableEntity implements Tameable, InventoryChangedListener, Angerable {
+public abstract class PCTameablePetWithInventory extends TamableAnimal implements OwnableEntity, ContainerListener, NeutralMob {
 
-    public SimpleInventory inventory = new SimpleInventory(54);
+    public SimpleContainer inventory = new SimpleContainer(54);
     public boolean interacting;
     PCChestTypes type;
     @Nullable
     private UUID angryAt;
 
-    protected static final TrackedData<MimicState> MIMIC_STATE;
-    protected static final TrackedData<Integer> ANGER_TIME;
-    protected static final UniformIntProvider ANGER_TIME_RANGE;
-    protected static final TrackedData<Boolean> IS_ABANDONED;
-    protected static final TrackedData<Boolean> MIMIC_HAS_LOCK;
-    protected static final TrackedData<Boolean> IS_MIMIC_LOCKED;
-    protected static final TrackedData<Boolean> IS_OPEN_STATE;
+    protected static final EntityDataAccessor<MimicState> MIMIC_STATE;
+    protected static final EntityDataAccessor<Integer> ANGER_TIME;
+    protected static final UniformInt ANGER_TIME_RANGE;
+    protected static final EntityDataAccessor<Boolean> IS_ABANDONED;
+    protected static final EntityDataAccessor<Boolean> MIMIC_HAS_LOCK;
+    protected static final EntityDataAccessor<Boolean> IS_MIMIC_LOCKED;
+    protected static final EntityDataAccessor<Boolean> IS_OPEN_STATE;
 
 
     static {
-        MIMIC_STATE = DataTracker.registerData(PCTameablePetWithInventory.class, PCEntities.STATE_SERIALIZER);
-        ANGER_TIME = DataTracker.registerData(PCTameablePetWithInventory.class, TrackedDataHandlerRegistry.INTEGER);
-        IS_ABANDONED = DataTracker.registerData(PCTameablePetWithInventory.class, TrackedDataHandlerRegistry.BOOLEAN);
-        MIMIC_HAS_LOCK = DataTracker.registerData(PCTameablePetWithInventory.class, TrackedDataHandlerRegistry.BOOLEAN);
-        IS_MIMIC_LOCKED = DataTracker.registerData(PCTameablePetWithInventory.class, TrackedDataHandlerRegistry.BOOLEAN);
-        IS_OPEN_STATE = DataTracker.registerData(PCTameablePetWithInventory.class, TrackedDataHandlerRegistry.BOOLEAN);
-        ANGER_TIME_RANGE = TimeHelper.betweenSeconds(20, 39);
+        MIMIC_STATE = SynchedEntityData.defineId(PCTameablePetWithInventory.class, PCEntities.STATE_SERIALIZER);
+        ANGER_TIME = SynchedEntityData.defineId(PCTameablePetWithInventory.class, EntityDataSerializers.INT);
+        IS_ABANDONED = SynchedEntityData.defineId(PCTameablePetWithInventory.class, EntityDataSerializers.BOOLEAN);
+        MIMIC_HAS_LOCK = SynchedEntityData.defineId(PCTameablePetWithInventory.class, EntityDataSerializers.BOOLEAN);
+        IS_MIMIC_LOCKED = SynchedEntityData.defineId(PCTameablePetWithInventory.class, EntityDataSerializers.BOOLEAN);
+        IS_OPEN_STATE = SynchedEntityData.defineId(PCTameablePetWithInventory.class, EntityDataSerializers.BOOLEAN);
+        ANGER_TIME_RANGE = TimeUtil.rangeOfSeconds(20, 39);
     }
 
     public int viewerCount = 0;
@@ -107,10 +116,10 @@ public abstract class PCTameablePetWithInventory extends TameableEntity implemen
     private static final double moveSpeed = 1.0D;
 
 
-    public PCTameablePetWithInventory(EntityType<? extends TameableEntity> entityType, World world) {
+    public PCTameablePetWithInventory(EntityType<? extends TamableAnimal> entityType, Level world) {
         super(entityType, world);
         this.type = PCChestTypes.NORMAL;
-        this.ignoreCameraFrustum = true;
+        this.noCulling = true;
         this.inventory.addListener(this);
         this.isAbandonedTimer = ProbablyChests.loadedConfig.mimicSettings.abandonedMimicTimer * 1200;
     }
@@ -119,89 +128,89 @@ public abstract class PCTameablePetWithInventory extends TameableEntity implemen
         this.type = type;
     }
 
-    public static DefaultAttributeContainer.Builder createMobAttributes() {
-        return LivingEntity.createLivingAttributes().add(EntityAttributes.GENERIC_FOLLOW_RANGE, 10.0D)
-                .add(EntityAttributes.GENERIC_ATTACK_KNOCKBACK, 2)
-                .add(EntityAttributes.GENERIC_ATTACK_DAMAGE, 5)
-                .add(EntityAttributes.GENERIC_MOVEMENT_SPEED, 1)
-                .add(EntityAttributes.GENERIC_MAX_HEALTH, 50)
-                .add(EntityAttributes.GENERIC_KNOCKBACK_RESISTANCE, 0.5D);
+    public static AttributeSupplier.Builder createMobAttributes() {
+        return LivingEntity.createLivingAttributes().add(Attributes.FOLLOW_RANGE, 10.0D)
+                .add(Attributes.ATTACK_KNOCKBACK, 2)
+                .add(Attributes.ATTACK_DAMAGE, 5)
+                .add(Attributes.MOVEMENT_SPEED, 1)
+                .add(Attributes.MAX_HEALTH, 50)
+                .add(Attributes.KNOCKBACK_RESISTANCE, 0.5D);
     }
 
 
     @Override
     public void remove(RemovalReason reason) {
         super.remove(reason);
-        if (this.getOwner() != null && this.getOwner() instanceof ServerPlayerEntity) {
-            ((PlayerEntityAccess) this.getOwner()).removePetMimicFromOwnedList(this.getUuid());
+        if (this.getOwner() != null && this.getOwner() instanceof ServerPlayer) {
+            ((PlayerEntityAccess) this.getOwner()).removePetMimicFromOwnedList(this.getUUID());
         }
     }
 
     public void tick() {
         super.tick();
-        if (this.getOwner() != null && !this.getWorld().isClient() && this.isTamed()) {
+        if (this.getOwner() != null && !this.level().isClientSide() && this.isTame()) {
             if (this.getIsAbandoned()) {
                 if (this.isAbandonedTimer > 0) {
                     this.isAbandonedTimer--;
                 } else {
-                    this.setTamed(false, false);
+                    this.setTame(false, false);
 
-                    convertPetMimicToHostile(getWorld(), type, this);
+                    convertPetMimicToHostile(level(), type, this);
                 }
             }
         }
     }
 
-    public boolean isBreedingItem(ItemStack stack) {
-        return stack.contains(DataComponentTypes.FOOD) && stack.isIn(ItemTags.WOLF_FOOD);
+    public boolean isFood(ItemStack stack) {
+        return stack.has(DataComponents.FOOD) && stack.is(ItemTags.WOLF_FOOD);
     }
 
 
-    public ActionResult interactMob(PlayerEntity player, Hand hand) {
-        ItemStack itemStack = player.getStackInHand(hand);
+    public InteractionResult mobInteract(Player player, InteractionHand hand) {
+        ItemStack itemStack = player.getItemInHand(hand);
         Item item = itemStack.getItem();
-        if (this.getWorld().isClient()) {
-            return ActionResult.SUCCESS;
+        if (this.level().isClientSide()) {
+            return InteractionResult.SUCCESS;
         }
         PCConfig config = ProbablyChests.loadedConfig;
 
-        if (this.isTamed()) {
-            if (!this.getIsAbandoned() && this.isBreedingItem(itemStack) && this.getHealth() < this.getMaxHealth()) {
-                if (!player.getAbilities().creativeMode) {
-                    itemStack.decrement(1);
+        if (this.isTame()) {
+            if (!this.getIsAbandoned() && this.isFood(itemStack) && this.getHealth() < this.getMaxHealth()) {
+                if (!player.getAbilities().instabuild) {
+                    itemStack.shrink(1);
                 }
-                FoodComponent food = itemStack.get(DataComponentTypes.FOOD);
+                FoodProperties food = itemStack.get(DataComponents.FOOD);
                 if (food != null) this.heal((float) food.nutrition());
                 this.playSound(PCSounds.MIMIC_BITE, this.getSoundVolume(), 1.5F + getPitchOffset(0.2F));
-                return ActionResult.SUCCESS;
-            } else if (itemStack.isOf(PCItems.MIMIC_HAND_BELL)) {
+                return InteractionResult.SUCCESS;
+            } else if (itemStack.is(PCItems.MIMIC_HAND_BELL)) {
                 if (!this.getIsAbandoned() && this.getOwner() == player) {
-                    if (player.isSneaking()) {
-                        ((PlayerEntityAccess) player).removeMimicFromKeepList(this.getUuid());
+                    if (player.isShiftKeyDown()) {
+                        ((PlayerEntityAccess) player).removeMimicFromKeepList(this.getUUID());
                         // 4 8
                         this.playSound(PCSounds.BELL_HIT_4, this.getSoundVolume(), 0.5F + getPitchOffset(0.1F));
                     } else {
-                        ((PlayerEntityAccess) player).addMimicToKeepList(this.getUuid());
+                        ((PlayerEntityAccess) player).addMimicToKeepList(this.getUUID());
                         this.playSound(PCSounds.BELL_HIT_4, this.getSoundVolume(), 1.0F + getPitchOffset(0.1F));
                     }
                 } else {
                     if (this.getIsAbandoned() && !((PlayerEntityAccess) player).checkForMimicLimit()) {
-                        this.setOwner(player);
+                        this.tame(player);
                         this.setIsAbandoned(false);
                         this.isAbandonedTimer = ProbablyChests.loadedConfig.mimicSettings.abandonedMimicTimer * 1200;
-                        ((PlayerEntityAccess) player).addPetMimicToOwnedList(this.getUuid());
+                        ((PlayerEntityAccess) player).addPetMimicToOwnedList(this.getUUID());
                         this.playSound(PCSounds.BELL_HIT_2, this.getSoundVolume(), 1.0F + getPitchOffset(0.1F));
                     }
                 }
-                return ActionResult.SUCCESS;
-            } else if (this.getOwner() == player && !this.getIsAbandoned() && itemStack.isOf(PCItems.IRON_LOCK) && !this.getMimicHasLock() && config.mimicSettings.allowPetMimicLocking) {
+                return InteractionResult.SUCCESS;
+            } else if (this.getOwner() == player && !this.getIsAbandoned() && itemStack.is(PCItems.IRON_LOCK) && !this.getMimicHasLock() && config.mimicSettings.allowPetMimicLocking) {
                 this.setMimicHasLock(true);
                 this.setIsMimicLocked(true);
-                if (!player.getAbilities().creativeMode) {
-                    itemStack.decrement(1);
+                if (!player.getAbilities().instabuild) {
+                    itemStack.shrink(1);
                 }
                 this.playSound(PCSounds.APPLY_LOCK1, this.getSoundVolume(), 1.0F + getPitchOffset(0.1F));
-            } else if (this.getOwner() == player && !this.getIsAbandoned() && itemStack.isOf(PCItems.IRON_KEY) && this.getMimicHasLock() && config.mimicSettings.allowPetMimicLocking) {
+            } else if (this.getOwner() == player && !this.getIsAbandoned() && itemStack.is(PCItems.IRON_KEY) && this.getMimicHasLock() && config.mimicSettings.allowPetMimicLocking) {
                 this.setIsMimicLocked(!this.getIsMimicLocked());
                 if (this.getIsMimicLocked()) {
                     this.playSound(PCSounds.LOCK_UNLOCK, this.getSoundVolume(), 1.3F + getPitchOffset(0.1F));
@@ -209,21 +218,21 @@ public abstract class PCTameablePetWithInventory extends TameableEntity implemen
                     this.playSound(PCSounds.LOCK_UNLOCK, this.getSoundVolume(), 0.6F + getPitchOffset(0.1F));
                 }
             } else if (!this.getIsAbandoned()) {
-                ActionResult actionResult = super.interactMob(player, hand);
-                if (player.isSneaking()) {
-                    if (this.isOwner(player)) {
-                        this.setSitting(!this.isSitting());
+                InteractionResult actionResult = super.mobInteract(player, hand);
+                if (player.isShiftKeyDown()) {
+                    if (this.isOwnedBy(player)) {
+                        this.setOrderedToSit(!this.isOrderedToSit());
                         this.updateSitting(player);
-                        this.playSound(this.isSitting() ? this.getSitSound() : this.getStandSound(), this.getSoundVolume(), 0.9F + getPitchOffset(0.1F));
+                        this.playSound(this.isOrderedToSit() ? this.getSitSound() : this.getStandSound(), this.getSoundVolume(), 0.9F + getPitchOffset(0.1F));
                         this.jumping = false;
                         this.navigation.stop();
                         this.setTarget((LivingEntity) null);
-                        return ActionResult.SUCCESS;
+                        return InteractionResult.SUCCESS;
                     }
 
                     return actionResult;
                 } else {
-                    if (this.canMoveVoluntarily()) {
+                    if (this.isEffectiveAi()) {
                         if (this.getIsMimicLocked() && config.mimicSettings.allowPetMimicLocking) {
                             if (this.getOwner() == player) {
                                 this.openGui(player);
@@ -236,39 +245,39 @@ public abstract class PCTameablePetWithInventory extends TameableEntity implemen
                             this.openGui(player);
                         }
                     }
-                    return ActionResult.success(this.getWorld().isClient());
+                    return InteractionResult.sidedSuccess(this.level().isClientSide());
                 }
             }
-        } else if (itemStack.isOf(PCItems.PET_MIMIC_KEY)) {
-            if (!player.getAbilities().creativeMode) {
-                itemStack.decrement(1);
+        } else if (itemStack.is(PCItems.PET_MIMIC_KEY)) {
+            if (!player.getAbilities().instabuild) {
+                itemStack.shrink(1);
             }
             if (this instanceof PCChestMimicPet) {
-                this.setOwner(player);
+                this.tame(player);
                 this.navigation.stop();
                 this.setTarget((LivingEntity) null);
-                this.setSitting(true);
+                this.setOrderedToSit(true);
                 this.updateSitting(player);
                 this.playSound(this.getSitSound(), this.getSoundVolume(), 0.9F + getPitchOffset(0.1F));
-                this.getWorld().sendEntityStatus(this, (byte) 7);
+                this.level().broadcastEntityEvent(this, (byte) 7);
             } else {
-                convertHostileMimicToPet(getWorld(), type, this, player);
+                convertHostileMimicToPet(level(), type, this, player);
                 this.playSound(this.getSitSound(), this.getSoundVolume(), 0.9F + getPitchOffset(0.1F));
             }
 
-            return ActionResult.SUCCESS;
+            return InteractionResult.SUCCESS;
         } else {
-            return super.interactMob(player, hand);
+            return super.mobInteract(player, hand);
         }
-        return ActionResult.FAIL;
+        return InteractionResult.FAIL;
     }
 
     public void bite(LivingEntity target) {
         if (this.isAlive()) {
-            if (target.damage(this.getDamageSources().mobAttack(this), this.biteDamageAmount)) {
+            if (target.hurt(this.damageSources().mobAttack(this), this.biteDamageAmount)) {
                 this.playSound(this.getHurtSound(), this.getSoundVolume(), (this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 0.7F);
                 this.playSound(PCSounds.MIMIC_BITE, this.getSoundVolume(), 1.5F + getPitchOffset(0.2F));
-                this.applyDamageEffects(this, target);
+                this.doEnchantDamageEffects(this, target);
             }
         }
     }
@@ -278,7 +287,7 @@ public abstract class PCTameablePetWithInventory extends TameableEntity implemen
     }
 
 
-    public void updateSitting(PlayerEntity player) {
+    public void updateSitting(Player player) {
     }
 
     @Override
@@ -287,11 +296,11 @@ public abstract class PCTameablePetWithInventory extends TameableEntity implemen
     }
 
     @Override
-    public void onInventoryChanged(Inventory sender) {
+    public void containerChanged(Container sender) {
     }
 
-    public void openGui(PlayerEntity player) {
-        if (player.getWorld() != null && !this.getWorld().isClient()) {
+    public void openGui(Player player) {
+        if (player.level() != null && !this.level().isClientSide()) {
             if (this.viewerCount == 0) {
                 openAnimationTimer = 12;
                 this.setIsOpenState(true);
@@ -299,20 +308,20 @@ public abstract class PCTameablePetWithInventory extends TameableEntity implemen
                 this.playSound(PCSounds.CLOSE_2, this.getSoundVolume(), 1.5F + getPitchOffset(0.1F));
             }
             this.viewerCount++;
-            int syncId = player.openHandledScreen(new MimicScreenHandlerFactory()).getAsInt();
+            int syncId = player.openMenu(new MimicScreenHandlerFactory()).getAsInt();
             MimicInventoryPacket packet = new MimicInventoryPacket(
-                    this.inventory.size(),
+                    this.inventory.getContainerSize(),
                     this.getId(),
                     (byte) syncId
             );
-            for (ServerPlayerEntity p : PlayerLookup.tracking(this)) {
+            for (ServerPlayer p : PlayerLookup.tracking(this)) {
                 ServerPlayNetworking.send(p, packet);
             }
         }
     }
 
-    public void closeGui(PlayerEntity player) {
-        if (player.getWorld() != null && !this.getWorld().isClient()) {
+    public void closeGui(Player player) {
+        if (player.level() != null && !this.level().isClientSide()) {
             viewerCount -= 1;
             if (viewerCount == 0) {
                 closeAnimationTimer = 12;
@@ -328,25 +337,25 @@ public abstract class PCTameablePetWithInventory extends TameableEntity implemen
     }
 
     @Override
-    protected void dropEquipment(DamageSource source, int lootingMultiplier, boolean allowDrops) {
-        for (int i = 0; i < this.inventory.size(); ++i) {
-            ItemStack itemstack = this.inventory.getStack(i);
+    protected void dropCustomDeathLoot(DamageSource source, int lootingMultiplier, boolean allowDrops) {
+        for (int i = 0; i < this.inventory.getContainerSize(); ++i) {
+            ItemStack itemstack = this.inventory.getItem(i);
             if (!itemstack.isEmpty()) {
-                this.dropStack(itemstack);
+                this.spawnAtLocation(itemstack);
             }
         }
     }
 
     @Override
-    public int getSafeFallDistance() {
+    public int getMaxFallDistance() {
         return 20;
     }
 
     @Override
-    protected int computeFallDamage(float fallDistance, float damageMultiplier) {
-        StatusEffectInstance statusEffectInstance = this.getStatusEffect(StatusEffects.JUMP_BOOST);
+    protected int calculateFallDamage(float fallDistance, float damageMultiplier) {
+        MobEffectInstance statusEffectInstance = this.getEffect(MobEffects.JUMP);
         float f = statusEffectInstance == null ? 0.0F : (float) (statusEffectInstance.getAmplifier() + 1);
-        return MathHelper.ceil((fallDistance - 20.0F - f) * damageMultiplier);
+        return Mth.ceil((fallDistance - 20.0F - f) * damageMultiplier);
     }
 
 
@@ -355,140 +364,140 @@ public abstract class PCTameablePetWithInventory extends TameableEntity implemen
     }
 
     public SoundEvent getJumpSound() {
-        return SoundEvents.BLOCK_CHEST_OPEN;
+        return SoundEvents.CHEST_OPEN;
     }
 
     protected SoundEvent getSitSound() {
-        return SoundEvents.BLOCK_CHEST_CLOSE;
+        return SoundEvents.CHEST_CLOSE;
     }
 
     protected SoundEvent getStandSound() {
-        return SoundEvents.BLOCK_CHEST_OPEN;
+        return SoundEvents.CHEST_OPEN;
     }
 
     protected SoundEvent getCloseSound() {
-        return SoundEvents.BLOCK_CHEST_CLOSE;
+        return SoundEvents.CHEST_CLOSE;
     }
 
     protected SoundEvent getOpenSound() {
-        return SoundEvents.BLOCK_CHEST_OPEN;
+        return SoundEvents.CHEST_OPEN;
     }
 
     protected SoundEvent getHurtSound() {
-        return SoundEvents.ENTITY_ZOMBIE_ATTACK_WOODEN_DOOR;
+        return SoundEvents.ZOMBIE_ATTACK_WOODEN_DOOR;
     }
 
     protected SoundEvent getDeathSound() {
-        return SoundEvents.ENTITY_ZOMBIE_BREAK_WOODEN_DOOR;
+        return SoundEvents.ZOMBIE_BREAK_WOODEN_DOOR;
     }
 
     protected SoundEvent getLandingSound() {
-        return SoundEvents.BLOCK_CHEST_CLOSE;
+        return SoundEvents.CHEST_CLOSE;
     }
 
-    static void playSound(World world, BlockPos pos, BlockState state, SoundEvent soundEvent) {
+    static void playSound(Level world, BlockPos pos, BlockState state, SoundEvent soundEvent) {
         double d = (double) pos.getX() + 0.5;
         double e = (double) pos.getY() + 0.5;
         double f = (double) pos.getZ() + 0.5;
 
-        world.playSound(null, d, e, f, soundEvent, SoundCategory.BLOCKS, 0.5f, world.random.nextFloat() * 0.1f + 0.9f);
+        world.playSound(null, d, e, f, soundEvent, SoundSource.BLOCKS, 0.5f, world.random.nextFloat() * 0.1f + 0.9f);
     }
 
 
-    protected float getActiveEyeHeight(EntityPose pose, EntityDimensions dimensions) {
+    protected float getActiveEyeHeight(Pose pose, EntityDimensions dimensions) {
         return 0.625F * dimensions.height();
     }
 
 
-    protected boolean isDisallowedInPeaceful() {
+    protected boolean shouldDespawnInPeaceful() {
         return false;
     }
 
-    public void writeCustomDataToNbt(NbtCompound nbt) {
-        super.writeCustomDataToNbt(nbt);
-        NbtList listnbt = new NbtList();
-        for (int i = 0; i < this.inventory.size(); ++i) {
-            ItemStack itemstack = this.inventory.getStack(i);
+    public void addAdditionalSaveData(CompoundTag nbt) {
+        super.addAdditionalSaveData(nbt);
+        ListTag listnbt = new ListTag();
+        for (int i = 0; i < this.inventory.getContainerSize(); ++i) {
+            ItemStack itemstack = this.inventory.getItem(i);
             if (itemstack.isEmpty()) continue;
-            NbtCompound compoundnbt = new NbtCompound();
+            CompoundTag compoundnbt = new CompoundTag();
             compoundnbt.putByte("Slot", (byte) i);
-            listnbt.add(itemstack.encode(getWorld().getRegistryManager(), compoundnbt));
+            listnbt.add(itemstack.save(level().registryAccess(), compoundnbt));
         }
         nbt.put("Inventory", listnbt);
         nbt.putBoolean("is_abandoned", this.getIsAbandoned());
         nbt.putBoolean("mimic_has_lock", this.getMimicHasLock());
         nbt.putBoolean("is_mimic_locked", this.getIsMimicLocked());
-        this.writeAngerToNbt(nbt);
+        this.addPersistentAngerSaveData(nbt);
     }
 
-    public void readCustomDataFromNbt(NbtCompound nbt) {
-        super.readCustomDataFromNbt(nbt);
-        NbtList listnbt = nbt.getList("Inventory", 10);
+    public void readAdditionalSaveData(CompoundTag nbt) {
+        super.readAdditionalSaveData(nbt);
+        ListTag listnbt = nbt.getList("Inventory", 10);
         for (int i = 0; i < listnbt.size(); ++i) {
-            NbtCompound compoundnbt = listnbt.getCompound(i);
+            CompoundTag compoundnbt = listnbt.getCompound(i);
             int j = compoundnbt.getByte("Slot") & 255;
-            this.inventory.setStack(j, ItemStack.fromNbt(getWorld().getRegistryManager(), compoundnbt).orElse(ItemStack.EMPTY));
+            this.inventory.setItem(j, ItemStack.parse(level().registryAccess(), compoundnbt).orElse(ItemStack.EMPTY));
         }
-        this.readAngerFromNbt(this.getWorld(), nbt);
+        this.readPersistentAngerSaveData(this.level(), nbt);
         this.setIsAbandoned(nbt.getBoolean("is_abandoned"));
         this.setMimicHasLock(nbt.getBoolean("mimic_has_lock"));
         this.setIsMimicLocked(nbt.getBoolean("is_mimic_locked"));
     }
 
     public void setMimicState(MimicState state) {
-        this.dataTracker.set(MIMIC_STATE, state);
+        this.entityData.set(MIMIC_STATE, state);
     }
 
     public MimicState getMimicState() {
-        return this.dataTracker.get(MIMIC_STATE);
+        return this.entityData.get(MIMIC_STATE);
     }
 
     public void setIsOpenState(boolean state) {
-        this.dataTracker.set(IS_OPEN_STATE, state);
+        this.entityData.set(IS_OPEN_STATE, state);
     }
 
     public boolean getIsOpenState() {
-        return this.dataTracker.get(IS_OPEN_STATE);
+        return this.entityData.get(IS_OPEN_STATE);
     }
 
     public void setIsAbandoned(boolean state) {
-        this.dataTracker.set(IS_ABANDONED, state);
+        this.entityData.set(IS_ABANDONED, state);
     }
 
     public boolean getIsAbandoned() {
-        return this.dataTracker.get(IS_ABANDONED);
+        return this.entityData.get(IS_ABANDONED);
     }
 
     public void setMimicHasLock(boolean state) {
-        this.dataTracker.set(MIMIC_HAS_LOCK, state);
+        this.entityData.set(MIMIC_HAS_LOCK, state);
     }
 
     public boolean getMimicHasLock() {
-        return this.dataTracker.get(MIMIC_HAS_LOCK);
+        return this.entityData.get(MIMIC_HAS_LOCK);
     }
 
     public void setIsMimicLocked(boolean state) {
-        this.dataTracker.set(IS_MIMIC_LOCKED, state);
+        this.entityData.set(IS_MIMIC_LOCKED, state);
     }
 
     public boolean getIsMimicLocked() {
-        return this.dataTracker.get(IS_MIMIC_LOCKED);
+        return this.entityData.get(IS_MIMIC_LOCKED);
     }
 
     @Nullable
     @Override
-    public PassiveEntity createChild(ServerWorld world, PassiveEntity entity) {
+    public AgeableMob getBreedOffspring(ServerLevel world, AgeableMob entity) {
         return null;
     }
 
     @Override
-    protected void initDataTracker(DataTracker.Builder builder) {
-        super.initDataTracker(builder);
-        builder.add(ANGER_TIME, 0);
-        builder.add(IS_ABANDONED, false);
-        builder.add(MIMIC_HAS_LOCK, false);
-        builder.add(IS_MIMIC_LOCKED, false);
-        builder.add(IS_OPEN_STATE, false);
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(ANGER_TIME, 0);
+        builder.define(IS_ABANDONED, false);
+        builder.define(MIMIC_HAS_LOCK, false);
+        builder.define(IS_MIMIC_LOCKED, false);
+        builder.define(IS_OPEN_STATE, false);
     }
 
     @Override
@@ -496,43 +505,43 @@ public abstract class PCTameablePetWithInventory extends TameableEntity implemen
         return false;
     }
 
-    public boolean areInventoriesDifferent(Inventory other) {
+    public boolean areInventoriesDifferent(Container other) {
         return this.inventory != other;
     }
 
-    public int getAngerTime() {
-        return (Integer) this.dataTracker.get(ANGER_TIME);
+    public int getRemainingPersistentAngerTime() {
+        return (Integer) this.entityData.get(ANGER_TIME);
     }
 
-    public void setAngerTime(int angerTime) {
-        this.dataTracker.set(ANGER_TIME, angerTime);
+    public void setRemainingPersistentAngerTime(int angerTime) {
+        this.entityData.set(ANGER_TIME, angerTime);
     }
 
-    public void chooseRandomAngerTime() {
-        this.setAngerTime(ANGER_TIME_RANGE.get(this.random));
+    public void startPersistentAngerTimer() {
+        this.setRemainingPersistentAngerTime(ANGER_TIME_RANGE.sample(this.random));
     }
 
     @Nullable
-    public UUID getAngryAt() {
+    public UUID getPersistentAngerTarget() {
         return this.angryAt;
     }
 
-    public void setAngryAt(@Nullable UUID angryAt) {
+    public void setPersistentAngerTarget(@Nullable UUID angryAt) {
         this.angryAt = angryAt;
     }
 
-    private class MimicScreenHandlerFactory implements NamedScreenHandlerFactory {
+    private class MimicScreenHandlerFactory implements MenuProvider {
         private PCTameablePetWithInventory mimic() {
             return PCTameablePetWithInventory.this;
         }
 
         @Override
-        public Text getDisplayName() {
+        public Component getDisplayName() {
             return this.mimic().getDisplayName();
         }
 
         @Override
-        public ScreenHandler createMenu(int syncId, PlayerInventory inv, PlayerEntity player) {
+        public AbstractContainerMenu createMenu(int syncId, Inventory inv, Player player) {
             var mimicInv = this.mimic().inventory;
             PCMimicScreenHandler screenHandler = PCMimicScreenHandler.createScreenHandler(syncId, inv, mimicInv);
             screenHandler.setMimicEntity(this.mimic());
@@ -550,21 +559,21 @@ public abstract class PCTameablePetWithInventory extends TameableEntity implemen
 
         public SwimmingGoal(PCTameablePetWithInventory mimic) {
             this.mimic = mimic;
-            this.setControls(EnumSet.of(Control.JUMP, Control.MOVE));
-            mimic.getNavigation().setCanSwim(true);
+            this.setFlags(EnumSet.of(Flag.JUMP, Flag.MOVE));
+            mimic.getNavigation().setCanFloat(true);
         }
 
-        public boolean canStart() {
-            return (this.mimic.isTouchingWater() || this.mimic.isInLava()) && this.mimic.getMoveControl() instanceof MimicMoveControl;
+        public boolean canUse() {
+            return (this.mimic.isInWater() || this.mimic.isInLava()) && this.mimic.getMoveControl() instanceof MimicMoveControl;
         }
 
-        public boolean shouldRunEveryTick() {
+        public boolean requiresUpdateEveryTick() {
             return true;
         }
 
         public void tick() {
             if (this.mimic.getRandom().nextFloat() < 0.8F) {
-                this.mimic.getJumpControl().setActive();
+                this.mimic.getJumpControl().jump();
             }
 
             ((MimicMoveControl) this.mimic.getMoveControl()).move(4.2D);
@@ -576,11 +585,11 @@ public abstract class PCTameablePetWithInventory extends TameableEntity implemen
 
         public IdleGoal(PCTameablePetWithInventory mimic) {
             this.mimic = mimic;
-            this.setControls(EnumSet.of(Control.LOOK, Control.MOVE, Control.JUMP));
+            this.setFlags(EnumSet.of(Flag.LOOK, Flag.MOVE, Flag.JUMP));
         }
 
-        public boolean canStart() {
-            return !this.mimic.hasVehicle();
+        public boolean canUse() {
+            return !this.mimic.isPassenger();
         }
 
         public void tick() {
@@ -595,28 +604,28 @@ public abstract class PCTameablePetWithInventory extends TameableEntity implemen
             this.mimic = mimic;
         }
 
-        public boolean canStart() {
-            return !this.mimic.hasVehicle() && this.mimic.getMimicState() == MimicState.SLEEPING;
+        public boolean canUse() {
+            return !this.mimic.isPassenger() && this.mimic.getMimicState() == MimicState.SLEEPING;
         }
 
-        public boolean shouldContinue() {
-            return !this.mimic.hasVehicle() && this.mimic.getMimicState() == MimicState.SLEEPING;
+        public boolean canContinueToUse() {
+            return !this.mimic.isPassenger() && this.mimic.getMimicState() == MimicState.SLEEPING;
         }
 
         public void tick() {
             lockToBlock(10F, 10F);
-            ((MimicMoveControl) this.mimic.getMoveControl()).look(this.mimic.getYaw(), true);
+            ((MimicMoveControl) this.mimic.getMoveControl()).look(this.mimic.getYRot(), true);
         }
 
         public void lockToBlock(float maxYawChange, float maxPitchChange) {
-            float r = Math.round(this.mimic.getHeadYaw() / 90F) * 90F;
+            float r = Math.round(this.mimic.getYHeadRot() / 90F) * 90F;
             double x = this.mimic.getBlockX() - this.mimic.getX();
             double z = this.mimic.getBlockZ() - this.mimic.getZ();
-            this.mimic.setYaw(this.changeAngle(this.mimic.getYaw(), r, maxYawChange));
+            this.mimic.setYRot(this.changeAngle(this.mimic.getYRot(), r, maxYawChange));
         }
 
         private float changeAngle(float from, float to, float max) {
-            float f = MathHelper.wrapDegrees(to - from);
+            float f = Mth.wrapDegrees(to - from);
             if (f > max) {
                 f = max;
             }
@@ -629,8 +638,8 @@ public abstract class PCTameablePetWithInventory extends TameableEntity implemen
 
     static class FollowOwnerGoal extends Goal {
         private final PCTameablePetWithInventory mimic;
-        private final WorldView world;
-        private final EntityNavigation navigation;
+        private final LevelReader world;
+        private final PathNavigation navigation;
         private final float maxDistance;
         private final float minDistance;
         private final boolean leavesAllowed;
@@ -640,26 +649,26 @@ public abstract class PCTameablePetWithInventory extends TameableEntity implemen
 
         public FollowOwnerGoal(PCTameablePetWithInventory mimic, double speed, float minDistance, float maxDistance, boolean leavesAllowed) {
             this.mimic = mimic;
-            this.world = mimic.getWorld();
+            this.world = mimic.level();
             this.navigation = mimic.getNavigation();
             this.minDistance = minDistance;
             this.maxDistance = maxDistance;
             this.leavesAllowed = leavesAllowed;
-            this.setControls(EnumSet.of(Control.JUMP, Control.MOVE, Control.LOOK));
-            if (!(mimic.getNavigation() instanceof MobNavigation) && !(mimic.getNavigation() instanceof BirdNavigation)) {
+            this.setFlags(EnumSet.of(Flag.JUMP, Flag.MOVE, Flag.LOOK));
+            if (!(mimic.getNavigation() instanceof GroundPathNavigation) && !(mimic.getNavigation() instanceof FlyingPathNavigation)) {
                 throw new IllegalArgumentException("Unsupported mob type for FollowOwnerGoal");
             }
         }
 
-        public boolean canStart() {
+        public boolean canUse() {
             LivingEntity livingEntity = this.mimic.getOwner();
             if (livingEntity == null) {
                 return false;
             } else if (livingEntity.isSpectator()) {
                 return false;
-            } else if (this.mimic.isSitting()) {
+            } else if (this.mimic.isOrderedToSit()) {
                 return false;
-            } else if (this.mimic.squaredDistanceTo(livingEntity) < (double) (this.minDistance * this.minDistance)) {
+            } else if (this.mimic.distanceToSqr(livingEntity) < (double) (this.minDistance * this.minDistance)) {
                 return false;
             } else if (this.mimic.getIsAbandoned()) {
                 return false;
@@ -669,41 +678,41 @@ public abstract class PCTameablePetWithInventory extends TameableEntity implemen
             }
         }
 
-        public boolean shouldContinue() {
-            if (this.navigation.isIdle()) {
+        public boolean canContinueToUse() {
+            if (this.navigation.isDone()) {
                 return false;
-            } else if (this.mimic.isSitting()) {
+            } else if (this.mimic.isOrderedToSit()) {
                 return false;
             } else if (this.mimic.getIsAbandoned()) {
                 return false;
             } else {
-                return !(this.mimic.squaredDistanceTo(this.owner) <= (double) (this.maxDistance * this.maxDistance));
+                return !(this.mimic.distanceToSqr(this.owner) <= (double) (this.maxDistance * this.maxDistance));
             }
         }
 
         public void start() {
             this.updateCountdownTicks = 0;
-            this.oldWaterPathfindingPenalty = this.mimic.getPathfindingPenalty(PathNodeType.WATER);
-            this.mimic.setPathfindingPenalty(PathNodeType.WATER, 0.0F);
+            this.oldWaterPathfindingPenalty = this.mimic.getPathfindingMalus(PathType.WATER);
+            this.mimic.setPathfindingMalus(PathType.WATER, 0.0F);
             this.mimic.setTarget(this.owner);
         }
 
         public void stop() {
             this.owner = null;
             this.navigation.stop();
-            this.mimic.setPathfindingPenalty(PathNodeType.WATER, this.oldWaterPathfindingPenalty);
+            this.mimic.setPathfindingMalus(PathType.WATER, this.oldWaterPathfindingPenalty);
         }
 
         public void tick() {
             if (this.owner != null) {
-                this.mimic.lookAtEntity(this.owner, 40.0F, 40.0F);
+                this.mimic.lookAt(this.owner, 40.0F, 40.0F);
             }
-            ((MimicMoveControl) this.mimic.getMoveControl()).look(this.mimic.getYaw(), true);
-            this.mimic.getLookControl().lookAt(this.owner, 40.0F, (float) this.mimic.getMaxLookPitchChange());
+            ((MimicMoveControl) this.mimic.getMoveControl()).look(this.mimic.getYRot(), true);
+            this.mimic.getLookControl().setLookAt(this.owner, 40.0F, (float) this.mimic.getMaxHeadXRot());
             if (--this.updateCountdownTicks <= 0) {
-                this.updateCountdownTicks = this.getTickCount(10);
-                if (!this.mimic.hasVehicle()) {
-                    if (this.mimic.squaredDistanceTo(this.owner) >= 184.0D) {
+                this.updateCountdownTicks = this.adjustedTickDelay(10);
+                if (!this.mimic.isPassenger()) {
+                    if (this.mimic.distanceToSqr(this.owner) >= 184.0D) {
                         this.tryTeleport();
                     } else {
                         ((MimicMoveControl) this.mimic.getMoveControl()).move(moveSpeed);
@@ -713,7 +722,7 @@ public abstract class PCTameablePetWithInventory extends TameableEntity implemen
         }
 
         private void tryTeleport() {
-            BlockPos blockPos = this.owner.getBlockPos();
+            BlockPos blockPos = this.owner.blockPosition();
 
             for (int i = 0; i < 10; ++i) {
                 int j = this.getRandomInt(-3, 3);
@@ -733,23 +742,23 @@ public abstract class PCTameablePetWithInventory extends TameableEntity implemen
             } else if (!this.canTeleportTo(new BlockPos(x, y, z))) {
                 return false;
             } else {
-                this.mimic.refreshPositionAndAngles((double) x + 0.5D, (double) y, (double) z + 0.5D, this.mimic.getYaw(), this.mimic.getPitch());
+                this.mimic.moveTo((double) x + 0.5D, (double) y, (double) z + 0.5D, this.mimic.getYRot(), this.mimic.getXRot());
                 this.navigation.stop();
                 return true;
             }
         }
 
         private boolean canTeleportTo(BlockPos pos) {
-            PathNodeType pathNodeType = LandPathNodeMaker.getLandNodeType(this.mimic, pos.mutableCopy());
-            if (pathNodeType != PathNodeType.WALKABLE) {
+            PathType pathNodeType = WalkNodeEvaluator.getPathTypeStatic(this.mimic, pos.mutable());
+            if (pathNodeType != PathType.WALKABLE) {
                 return false;
             } else {
-                BlockState blockState = this.world.getBlockState(pos.down());
+                BlockState blockState = this.world.getBlockState(pos.below());
                 if (!this.leavesAllowed && blockState.getBlock() instanceof LeavesBlock) {
                     return false;
                 } else {
-                    BlockPos blockPos = pos.subtract(this.mimic.getBlockPos());
-                    return this.world.isSpaceEmpty(this.mimic, this.mimic.getBoundingBox().offset(blockPos));
+                    BlockPos blockPos = pos.subtract(this.mimic.blockPosition());
+                    return this.world.noCollision(this.mimic, this.mimic.getBoundingBox().move(blockPos));
                 }
             }
         }
@@ -767,7 +776,7 @@ public abstract class PCTameablePetWithInventory extends TameableEntity implemen
         BITING,
         LANDING;
 
-        public static final PacketCodec<ByteBuf, MimicState> NETWORK_CODEC = PacketCodecs.STRING.xmap(MimicState::valueOf, Enum::name);
+        public static final StreamCodec<ByteBuf, MimicState> NETWORK_CODEC = ByteBufCodecs.STRING_UTF8.map(MimicState::valueOf, Enum::name);
         public static final Codec<MimicState> CODEC = Codec.STRING.xmap(MimicState::valueOf, Enum::name);
     }
 }
