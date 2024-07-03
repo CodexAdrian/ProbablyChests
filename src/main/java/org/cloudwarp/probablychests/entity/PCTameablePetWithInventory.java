@@ -1,6 +1,5 @@
 package org.cloudwarp.probablychests.entity;
 
-import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Codec;
 import io.netty.buffer.ByteBuf;
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
@@ -33,7 +32,6 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtList;
-import net.minecraft.nbt.NbtOps;
 import net.minecraft.network.codec.PacketCodec;
 import net.minecraft.network.codec.PacketCodecs;
 import net.minecraft.registry.tag.ItemTags;
@@ -58,6 +56,7 @@ import org.cloudwarp.probablychests.block.PCChestTypes;
 import org.cloudwarp.probablychests.entity.ai.MimicMoveControl;
 import org.cloudwarp.probablychests.interfaces.PlayerEntityAccess;
 import org.cloudwarp.probablychests.network.MimicInventoryPacket;
+import org.cloudwarp.probablychests.registry.PCEntities;
 import org.cloudwarp.probablychests.registry.PCItems;
 import org.cloudwarp.probablychests.registry.PCSounds;
 import org.cloudwarp.probablychests.screenhandlers.PCMimicScreenHandler;
@@ -88,7 +87,7 @@ public abstract class PCTameablePetWithInventory extends TameableEntity implemen
 
 
     static {
-        MIMIC_STATE = DataTracker.registerData(PCTameablePetWithInventory.class, TrackedDataHandler.create(MimicState.NETWORK_CODEC));
+        MIMIC_STATE = DataTracker.registerData(PCTameablePetWithInventory.class, PCEntities.STATE_SERIALIZER);
         ANGER_TIME = DataTracker.registerData(PCTameablePetWithInventory.class, TrackedDataHandlerRegistry.INTEGER);
         IS_ABANDONED = DataTracker.registerData(PCTameablePetWithInventory.class, TrackedDataHandlerRegistry.BOOLEAN);
         MIMIC_HAS_LOCK = DataTracker.registerData(PCTameablePetWithInventory.class, TrackedDataHandlerRegistry.BOOLEAN);
@@ -407,7 +406,6 @@ public abstract class PCTameablePetWithInventory extends TameableEntity implemen
 
     public void writeCustomDataToNbt(NbtCompound nbt) {
         super.writeCustomDataToNbt(nbt);
-        nbt.putString("state", this.getMimicState().toString());
         NbtList listnbt = new NbtList();
         for (int i = 0; i < this.inventory.size(); ++i) {
             ItemStack itemstack = this.inventory.getStack(i);
@@ -417,7 +415,6 @@ public abstract class PCTameablePetWithInventory extends TameableEntity implemen
             listnbt.add(itemstack.encode(getWorld().getRegistryManager(), compoundnbt));
         }
         nbt.put("Inventory", listnbt);
-        nbt.putString("mimic_state", this.getMimicState().toString());
         nbt.putBoolean("is_abandoned", this.getIsAbandoned());
         nbt.putBoolean("mimic_has_lock", this.getMimicHasLock());
         nbt.putBoolean("is_mimic_locked", this.getIsMimicLocked());
@@ -426,7 +423,6 @@ public abstract class PCTameablePetWithInventory extends TameableEntity implemen
 
     public void readCustomDataFromNbt(NbtCompound nbt) {
         super.readCustomDataFromNbt(nbt);
-        this.setMimicState(MimicState.valueOf(nbt.getString("state")));
         NbtList listnbt = nbt.getList("Inventory", 10);
         for (int i = 0; i < listnbt.size(); ++i) {
             NbtCompound compoundnbt = listnbt.getCompound(i);
@@ -434,7 +430,6 @@ public abstract class PCTameablePetWithInventory extends TameableEntity implemen
             this.inventory.setStack(j, ItemStack.fromNbt(getWorld().getRegistryManager(), compoundnbt).orElse(ItemStack.EMPTY));
         }
         this.readAngerFromNbt(this.getWorld(), nbt);
-        this.setMimicState(nbt.getString("mimic_state"));
         this.setIsAbandoned(nbt.getBoolean("is_abandoned"));
         this.setMimicHasLock(nbt.getBoolean("mimic_has_lock"));
         this.setIsMimicLocked(nbt.getBoolean("is_mimic_locked"));
@@ -601,11 +596,11 @@ public abstract class PCTameablePetWithInventory extends TameableEntity implemen
         }
 
         public boolean canStart() {
-            return !this.mimic.hasVehicle() && this.mimic.getMimicState() == IS_SLEEPING;
+            return !this.mimic.hasVehicle() && this.mimic.getMimicState() == MimicState.SLEEPING;
         }
 
         public boolean shouldContinue() {
-            return !this.mimic.hasVehicle() && this.mimic.getMimicState() == IS_SLEEPING;
+            return !this.mimic.hasVehicle() && this.mimic.getMimicState() == MimicState.SLEEPING;
         }
 
         public void tick() {
@@ -766,6 +761,7 @@ public abstract class PCTameablePetWithInventory extends TameableEntity implemen
 
     public enum MimicState {
         SLEEPING,
+        FLYING,
         IDLE,
         JUMPING,
         BITING,

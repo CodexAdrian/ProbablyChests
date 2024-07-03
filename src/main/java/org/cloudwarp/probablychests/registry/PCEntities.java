@@ -5,6 +5,8 @@ import net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityType;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.SpawnGroup;
 import net.minecraft.entity.SpawnLocationTypes;
+import net.minecraft.entity.data.TrackedDataHandler;
+import net.minecraft.entity.data.TrackedDataHandlerRegistry;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
 import net.minecraft.util.Identifier;
@@ -12,6 +14,7 @@ import net.minecraft.world.Heightmap;
 import org.cloudwarp.probablychests.ProbablyChests;
 import org.cloudwarp.probablychests.entity.PCChestMimic;
 import org.cloudwarp.probablychests.entity.PCChestMimicPet;
+import org.cloudwarp.probablychests.entity.PCTameablePetWithInventory;
 
 public class PCEntities {
     public static final EntityType<PCChestMimic> NORMAL_CHEST_MIMIC = Registry.register(
@@ -202,6 +205,8 @@ public class PCEntities {
                     .build()
     );
 
+    public static final TrackedDataHandler<PCTameablePetWithInventory.MimicState> STATE_SERIALIZER = TrackedDataHandler.create(PCTameablePetWithInventory.MimicState.NETWORK_CODEC);
+
     public static void init() {
         FabricDefaultAttributeRegistry.register(NORMAL_CHEST_MIMIC, PCChestMimic.createMobAttributes());
         FabricDefaultAttributeRegistry.register(LUSH_CHEST_MIMIC, PCChestMimic.createMobAttributes());
@@ -222,5 +227,7 @@ public class PCEntities {
         FabricDefaultAttributeRegistry.register(SHADOW_CHEST_MIMIC_PET, PCChestMimicPet.createMobAttributes());
         FabricDefaultAttributeRegistry.register(ICE_CHEST_MIMIC_PET, PCChestMimicPet.createMobAttributes());
         FabricDefaultAttributeRegistry.register(CORAL_CHEST_MIMIC_PET, PCChestMimicPet.createMobAttributes());
+
+        TrackedDataHandlerRegistry.register(STATE_SERIALIZER);
     }
 }

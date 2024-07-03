@@ -29,6 +29,7 @@ import org.cloudwarp.probablychests.entity.ai.PCMimicEscapeDangerGoal;
 import org.cloudwarp.probablychests.registry.PCSounds;
 import org.jetbrains.annotations.Nullable;
 import software.bernie.geckolib.animatable.GeoAnimatable;
+import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.animation.*;
 import software.bernie.geckolib.animation.AnimationState;
@@ -36,7 +37,7 @@ import software.bernie.geckolib.util.GeckoLibUtil;
 
 import java.util.EnumSet;
 
-public class PCChestMimicPet extends PCTameablePetWithInventory implements GeoAnimatable, Tameable {
+public class PCChestMimicPet extends PCTameablePetWithInventory implements GeoEntity, Tameable {
     // Animations
     public static final RawAnimation IDLE = RawAnimation.begin().then("idle", Animation.LoopType.LOOP);
     public static final RawAnimation JUMP = RawAnimation.begin().then("jump", Animation.LoopType.PLAY_ONCE).then("flying", Animation.LoopType.LOOP);
@@ -121,18 +122,17 @@ public class PCChestMimicPet extends PCTameablePetWithInventory implements GeoAn
         return super.interactMob(player, hand);
     }
 
-
     private <E extends GeoAnimatable> PlayState chestMovement(AnimationState<E> eAnimationState) {
-        int state = this.getMimicState();
+        MimicState state = this.getMimicState();
         eAnimationState.getController().setAnimationSpeed(1D);
         eAnimationState.getController().transitionLength(6);
         eAnimationState.getController().setOverrideEasingType(EasingType.EASE_IN_OUT_SINE);
         switch (state) {
-            case IS_IN_AIR -> {
+            case FLYING -> {
                 eAnimationState.getController().transitionLength(2);
                 eAnimationState.getController().setAnimation(FLYING);
             }
-            case IS_IDLE -> {
+            case IDLE -> {
                 if (this.getIsOpenState()) {
                     eAnimationState.getController().setAnimation(OPENED);
                 } else {
@@ -143,11 +143,11 @@ public class PCChestMimicPet extends PCTameablePetWithInventory implements GeoAn
                     }
                 }
             }
-            case IS_JUMPING -> {
+            case JUMPING -> {
                 eAnimationState.getController().setAnimationSpeed(2D);
                 eAnimationState.getController().setAnimation(JUMP);
             }
-            case IS_BITING -> {
+            case BITING -> {
                 eAnimationState.getController().transitionLength(2);
                 eAnimationState.getController().setAnimationSpeed(1.5D);
                 eAnimationState.getController().setAnimation(BITING);
@@ -158,11 +158,11 @@ public class PCChestMimicPet extends PCTameablePetWithInventory implements GeoAn
     }
 
     private <E extends GeoAnimatable> PlayState tongueMovement(AnimationState<E> eAnimationState) {
-        int state = this.getMimicState();
+        MimicState state = this.getMimicState();
         eAnimationState.getController().setAnimationSpeed(1D);
         eAnimationState.getController().transitionLength(6);
         switch (state) {
-            case IS_IDLE -> {
+            case IDLE -> {
                 if (this.getIsOpenState()) {
                     eAnimationState.getController().setAnimation(IDLE_WAG);
                 } else {
@@ -173,11 +173,11 @@ public class PCChestMimicPet extends PCTameablePetWithInventory implements GeoAn
                     }
                 }
             }
-            case IS_JUMPING -> {
+            case JUMPING -> {
                 eAnimationState.getController().setAnimationSpeed(2D);
                 eAnimationState.getController().setAnimation(FLYING_WAG);
             }
-            case IS_IN_AIR -> {
+            case FLYING -> {
                 eAnimationState.getController().transitionLength(2);
                 eAnimationState.getController().setAnimation(FLYING_WAG);
             }
@@ -197,12 +197,6 @@ public class PCChestMimicPet extends PCTameablePetWithInventory implements GeoAn
         return cache;
     }
 
-    @Override
-    public double getTick(Object o) {
-        return 0;
-    }
-
-
     protected void jump() {
         Vec3d vec3d = this.getVelocity();
         LivingEntity livingEntity = this.getTarget();
@@ -218,7 +212,7 @@ public class PCChestMimicPet extends PCTameablePetWithInventory implements GeoAn
         this.velocityDirty = true;
         if (this.isOnGround() && this.jumpEndTimer <= 0) {
             this.jumpEndTimer = 10;
-            this.setMimicState(IS_JUMPING);
+            this.setMimicState(MimicState.JUMPING);
         }
     }
 
@@ -250,20 +244,20 @@ public class PCChestMimicPet extends PCTameablePetWithInventory implements GeoAn
                 this.playSound(this.getLandingSound(), this.getSoundVolume(), ((this.random.nextFloat() - this.random.nextFloat()) * 0.2F + 1.0F) / 0.8F);
             }
             if (biteAnimationTimer <= 0) {
-                this.setMimicState(IS_IDLE);
+                this.setMimicState(MimicState.IDLE);
             }
         } else {
-            if (this.getMimicState() != IS_JUMPING) {
+            if (this.getMimicState() != MimicState.JUMPING) {
                 if (spawnWaitTimer > 0) {
                     spawnWaitTimer -= 1;
                 } else {
-                    this.setMimicState(IS_IN_AIR);
+                    this.setMimicState(MimicState.FLYING);
                 }
             }
         }
         this.onGroundLastTick = this.isOnGround();
         if (this.getIsAbandoned()) {
-            this.setMimicState(IS_IDLE);
+            this.setMimicState(MimicState.IDLE);
         }
     }
 
@@ -286,7 +280,7 @@ public class PCChestMimicPet extends PCTameablePetWithInventory implements GeoAn
 
     @Override
     protected void initDataTracker(DataTracker.Builder builder) {
-        builder.add(MIMIC_STATE, IS_IDLE);
+        builder.add(MIMIC_STATE, MimicState.IDLE);
         super.initDataTracker(builder);
     }
 
@@ -421,7 +415,7 @@ public class PCChestMimicPet extends PCTameablePetWithInventory implements GeoAn
             Entity entity = source.getAttacker();
             if (!this.getWorld().isClient) {
                 this.setSitting(false);
-                this.setMimicState(IS_IDLE);
+                this.setMimicState(MimicState.IDLE);
             }
 
             if (entity != null && !(entity instanceof PlayerEntity) && !(entity instanceof PersistentProjectileEntity)) {

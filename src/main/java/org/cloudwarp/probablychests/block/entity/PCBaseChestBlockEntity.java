@@ -22,28 +22,24 @@ import net.minecraft.util.collection.DefaultedList;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.BlockView;
 import net.minecraft.world.World;
+import org.cloudwarp.probablychests.ProbablyChests;
 import org.cloudwarp.probablychests.block.PCChestTypes;
 import org.cloudwarp.probablychests.registry.PCProperties;
 import org.cloudwarp.probablychests.screenhandlers.PCChestScreenHandler;
 import org.cloudwarp.probablychests.utils.PCChestState;
 import org.jetbrains.annotations.Nullable;
 import software.bernie.geckolib.animatable.GeoAnimatable;
+import software.bernie.geckolib.animatable.GeoBlockEntity;
 import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
 import software.bernie.geckolib.animation.*;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
 import java.util.UUID;
 
-public class PCBaseChestBlockEntity extends LootableContainerBlockEntity implements GeoAnimatable {
-
-    public static final RawAnimation CLOSED = RawAnimation.begin().then("closed", Animation.LoopType.LOOP);
-    //public static final RawAnimation CLOSE = RawAnimation.begin().then("close").then("closed",Animation.LoopType.LOOP);
-    public static final RawAnimation CLOSE = RawAnimation.begin().then("close", Animation.LoopType.HOLD_ON_LAST_FRAME);
-    //public static final RawAnimation OPEN = RawAnimation.begin().then("open", false).then("opened",true);
-    public static final RawAnimation OPEN = RawAnimation.begin().then("open", Animation.LoopType.HOLD_ON_LAST_FRAME);
-    public static final RawAnimation OPENED = RawAnimation.begin().then("opened", Animation.LoopType.LOOP);
+public class PCBaseChestBlockEntity extends LootableContainerBlockEntity implements GeoBlockEntity {
+    public static final RawAnimation CLOSE = RawAnimation.begin().thenPlay("close").thenLoop("closed");
+    public static final RawAnimation OPEN = RawAnimation.begin().thenPlay("open").thenLoop("opened");
     public static final EnumProperty<PCChestState> CHEST_STATE = PCProperties.PC_CHEST_STATE;
-    private static final String CONTROLLER_NAME = "chestController";
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
     public boolean isMimic = false;
     public boolean isNatural = false;
@@ -233,27 +229,24 @@ public class PCBaseChestBlockEntity extends LootableContainerBlockEntity impleme
         return null;
     }
 
+    private PlayState predicate(AnimationState<PCBaseChestBlockEntity> state) {
+        return switch (state.getAnimatable().getChestState()) {
+            case CLOSED -> {
+                state.getController().setOverrideEasingType(EasingType.EASE_OUT_SINE);
+                yield state.setAndContinue(CLOSE);
+            }
+            case OPENED -> state.setAndContinue(OPEN);
+        };
+    }
+
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-        AnimationController<PCBaseChestBlockEntity> controller = new AnimationController<>(this, CONTROLLER_NAME, 7, animationEvent -> switch (getChestState()) {
-            case CLOSED -> {
-                animationEvent.getController().setOverrideEasingType(EasingType.EASE_OUT_SINE);
-                yield animationEvent.setAndContinue(CLOSED);
-            }
-            case OPENED -> animationEvent.setAndContinue(OPENED);
-            default -> PlayState.CONTINUE;
-        });
-        controllers.add(controller);
+        controllers.add(new AnimationController<>(this, 0, this::predicate));
     }
 
     @Override
     public AnimatableInstanceCache getAnimatableInstanceCache() {
         return cache;
-    }
-
-    @Override
-    public double getTick(Object o) {
-        return 0;
     }
 
     @Override
