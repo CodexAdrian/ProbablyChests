@@ -1,0 +1,39 @@
+ {
+    "schemaVersion": 1,
+    "id": "probablychests",
+    "version": "${version}",
+    "name": "Probably Chests",
+    "description": "A multiplatform data attachment mod",
+    "authors": ["ArcanePigeon"],
+    "contributors": ["CodexAdrian"],
+    "contact": {
+        "website": "",
+        "repo": "",
+        "issues": ""
+    },
+    "license": "ARR",
+    "icon": "icon.png",
+    "environment": "*",
+    "entrypoints": {
+        "main": [
+            "org.cloudwarp.fabric.ProbablyChestsFabric::init"
+        ]
+        ,
+        "client": [
+            "org.cloudwarp.client.fabric.ProbablyChestsClientFabric::init"
+        ]
+    },
+    "mixins": [
+        "probablychests-common.mixins.json",
+        "probablychests.mixins.json"
+    ],
+    "depends": {
+        "fabric-api": "*",
+        "minecraft": ">=1.20.6",
+        "java": ">=17"
+        ,
+        "resourcefullib": ">=2.5.5"
+        ,
+        "geckolib": ">=4.5.4.1"
+  }
+}

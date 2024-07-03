@@ -1,0 +1,57 @@
+{
+  "type": "minecraft:chest",
+  "pools": [
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:loot_table",
+          "value": "probablychests:chests/rare_items"
+        }
+      ]
+    },
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:loot_table",
+          "value": "probablychests:chests/normal_items"
+        }
+      ]
+    },
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:loot_table",
+          "value": "probablychests:chests/end_items"
+        }
+      ]
+    },
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:loot_table",
+          "weight": 1,
+          "value": "probablychests:chests/mining_items"
+        },
+        {
+          "type": "minecraft:loot_table",
+          "weight": 1,
+          "value": "probablychests:chests/normal_items"
+        },
+        {
+          "type": "minecraft:loot_table",
+          "weight": 1,
+          "value": "probablychests:chests/mixed_items"
+        },
+        {
+          "type": "minecraft:loot_table",
+          "weight": 40,
+          "value": "minecraft:chests/end_city_treasure"
+        }
+      ]
+    }
+  ]
+}
