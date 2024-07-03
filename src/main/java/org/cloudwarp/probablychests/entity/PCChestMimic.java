@@ -257,9 +257,4 @@ public class PCChestMimic extends PCTameablePetWithInventory implements GeoEntit
     public static boolean canSpawn(EntityType<PCChestMimic> pcChestMimicEntityType, ServerLevelAccessor serverWorldAccess, MobSpawnType spawnReason, BlockPos blockPos, net.minecraft.util.RandomSource random) {
         return isSpawnDark(serverWorldAccess, blockPos, random);
     }
-
-    @Override
-    public EntityGetter level() {
-        return null;
-    }
 }

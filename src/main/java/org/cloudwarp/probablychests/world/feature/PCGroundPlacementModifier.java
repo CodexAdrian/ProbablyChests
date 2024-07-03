@@ -16,8 +16,6 @@ import net.minecraft.world.level.levelgen.placement.PlacementModifier;
 import net.minecraft.world.level.levelgen.placement.PlacementModifierType;
 
 public class PCGroundPlacementModifier extends PlacementModifier {
-
-
 	public static final MapCodec<PCGroundPlacementModifier> MODIFIER_CODEC = RecordCodecBuilder.mapCodec((instance) -> instance.group(
 			(Direction.VERTICAL_CODEC.fieldOf("direction_of_search")).forGetter(PCGroundPlacementModifier -> PCGroundPlacementModifier.direction),
 			(BlockPredicate.CODEC.fieldOf("direction_target_condition")).forGetter(PCGroundPlacementModifier -> PCGroundPlacementModifier.directionPredicate),
@@ -49,7 +47,7 @@ public class PCGroundPlacementModifier extends PlacementModifier {
 	}
 
 	@Override
-	public Stream<BlockPos> count (PlacementContext context, RandomSource random, BlockPos pos) {
+	public Stream<BlockPos> getPositions(PlacementContext context, RandomSource random, BlockPos pos) {
 		BlockPos.MutableBlockPos mutableTarget = pos.mutable();
 		// get top of heightmap
 		int k = context.getHeight(this.heightmap, mutableTarget.getX(), mutableTarget.getZ());

@@ -1,14 +1,10 @@
 package org.cloudwarp.probablychests.world.feature;
 
 import net.minecraft.core.Holder;
-import net.minecraft.core.HolderGetter;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.data.worldgen.BootstrapContext;
 import net.minecraft.data.worldgen.placement.PlacementUtils;
-import net.minecraft.registry.*;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.world.gen.feature.*;
-import net.minecraft.world.gen.placementmodifier.*;
 import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
 import net.minecraft.world.level.levelgen.feature.Feature;
 import net.minecraft.world.level.levelgen.feature.configurations.FeatureConfiguration;
@@ -24,44 +20,49 @@ import java.util.List;
 
 public class PCFeatures {
 
-	//--------------------------------------------------------------------------
-	public static final ResourceKey<ConfiguredFeature<?,?>> SURFACE_CHEST_KEY = registerConfiguredKey("surface_chest");
-	public static void bootstrapConfigured(BootstrapContext<ConfiguredFeature<?, ?>> context) {
-		registerConfigured(context, SURFACE_CHEST_KEY, PCRegisteredFeatures.SURFACE_CHEST_FEATURE, new NoneFeatureConfiguration());
-	}
-	public static ResourceKey<ConfiguredFeature<?, ?>> registerConfiguredKey(String name) {
-		return ResourceKey.create(Registries.CONFIGURED_FEATURE, ProbablyChests.id(name));
-	}
+    //--------------------------------------------------------------------------
+    public static final ResourceKey<ConfiguredFeature<?, ?>> SURFACE_CHEST_KEY = registerConfiguredKey("surface_chest");
 
-	private static <FC extends FeatureConfiguration, F extends Feature<FC>> void registerConfigured(BootstrapContext<ConfiguredFeature<?, ?>> context, ResourceKey<ConfiguredFeature<?, ?>> key, F feature, FC configuration) {
-		context.register(key, new ConfiguredFeature<>(feature, configuration));
-	}
-	//--------------------------------------------------------------------------------------------------------------------------
-	public static final ResourceKey<PlacedFeature> SURFACE_CHEST_PLACED_KEY = registerPlacedKey("surface_chest_placed");
-	public static void bootstrapPlaced(BootstrapContext<PlacedFeature> context) {
-		PCConfig config = ProbablyChests.loadedConfig;
-		float chestSpawnChance = config.worldGen.chestSpawnChance;
-		float potSpawnChance = config.worldGen.potSpawnChance;
-		float surfaceChestSpawnChance = config.worldGen.surfaceChestSpawnChance;
-		var configuredFeatureRegistryEntryLookup = context.lookup(Registries.CONFIGURED_FEATURE);
-		registerPlaced(context, SURFACE_CHEST_PLACED_KEY, configuredFeatureRegistryEntryLookup.getOrThrow(SURFACE_CHEST_KEY),PCRarityFilterPlacementModifier.of(surfaceChestSpawnChance * 0.02F), InSquarePlacement.spread(), PlacementUtils.HEIGHTMAP);
-	}
-	public static ResourceKey<PlacedFeature> registerPlacedKey(String name) {
-		return ResourceKey.create(Registries.PLACED_FEATURE, ProbablyChests.id(name));
-	}
+    public static void bootstrapConfigured(BootstrapContext<ConfiguredFeature<?, ?>> context) {
+        registerConfigured(context, SURFACE_CHEST_KEY, PCRegisteredFeatures.SURFACE_CHEST_FEATURE, new NoneFeatureConfiguration());
+    }
 
-	private static void registerPlaced(BootstrapContext<PlacedFeature> context, ResourceKey<PlacedFeature> key, Holder<ConfiguredFeature<?, ?>> configuration, List<PlacementModifier> modifiers) {
-		context.register(key, new PlacedFeature(configuration, List.copyOf(modifiers)));
-	}
+    public static ResourceKey<ConfiguredFeature<?, ?>> registerConfiguredKey(String name) {
+        return ResourceKey.create(Registries.CONFIGURED_FEATURE, ProbablyChests.id(name));
+    }
 
-	private static <FC extends FeatureConfiguration, F extends Feature<FC>> void registerPlaced(BootstrapContext<PlacedFeature> context, ResourceKey<PlacedFeature> key,
-																				   Holder<ConfiguredFeature<?, ?>> configuration,
-																				   PlacementModifier... modifiers) {
-		registerPlaced(context, key, configuration, List.of(modifiers));
-	}
+    private static <FC extends FeatureConfiguration, F extends Feature<FC>> void registerConfigured(BootstrapContext<ConfiguredFeature<?, ?>> context, ResourceKey<ConfiguredFeature<?, ?>> key, F feature, FC configuration) {
+        context.register(key, new ConfiguredFeature<>(feature, configuration));
+    }
 
-	//--------------------------------------------------
-	//private static final Feature<DefaultFeatureConfig> SURFACE_CHEST_FEATURE = new SurfaceChestFeature(DefaultFeatureConfig.CODEC);
+    //--------------------------------------------------------------------------------------------------------------------------
+    public static final ResourceKey<PlacedFeature> SURFACE_CHEST_PLACED_KEY = registerPlacedKey("surface_chest_placed");
+
+    public static void bootstrapPlaced(BootstrapContext<PlacedFeature> context) {
+        PCConfig config = ProbablyChests.loadedConfig;
+        float chestSpawnChance = config.worldGen.chestSpawnChance;
+        float potSpawnChance = config.worldGen.potSpawnChance;
+        float surfaceChestSpawnChance = config.worldGen.surfaceChestSpawnChance;
+        var configuredFeatureRegistryEntryLookup = context.lookup(Registries.CONFIGURED_FEATURE);
+        registerPlaced(context, SURFACE_CHEST_PLACED_KEY, configuredFeatureRegistryEntryLookup.getOrThrow(SURFACE_CHEST_KEY), PCRarityFilterPlacementModifier.of(surfaceChestSpawnChance * 0.02F), InSquarePlacement.spread(), PlacementUtils.HEIGHTMAP);
+    }
+
+    public static ResourceKey<PlacedFeature> registerPlacedKey(String name) {
+        return ResourceKey.create(Registries.PLACED_FEATURE, ProbablyChests.id(name));
+    }
+
+    private static void registerPlaced(BootstrapContext<PlacedFeature> context, ResourceKey<PlacedFeature> key, Holder<ConfiguredFeature<?, ?>> configuration, List<PlacementModifier> modifiers) {
+        context.register(key, new PlacedFeature(configuration, List.copyOf(modifiers)));
+    }
+
+    private static <FC extends FeatureConfiguration, F extends Feature<FC>> void registerPlaced(BootstrapContext<PlacedFeature> context, ResourceKey<PlacedFeature> key,
+                                                                                                Holder<ConfiguredFeature<?, ?>> configuration,
+                                                                                                PlacementModifier... modifiers) {
+        registerPlaced(context, key, configuration, List.of(modifiers));
+    }
+
+    //--------------------------------------------------
+    //private static final Feature<DefaultFeatureConfig> SURFACE_CHEST_FEATURE = new SurfaceChestFeature(DefaultFeatureConfig.CODEC);
 
 
 	/*public static final RegistryEntry<ConfiguredFeature<?, ?>> SURFACE_CHEST =
@@ -145,14 +146,14 @@ public class PCFeatures {
 				PCGroundPlacementModifier.of(Direction.DOWN, BlockPredicate.hasSturdyFace(Direction.UP), BlockPredicate.IS_AIR,
 						20, Heightmap.Type.WORLD_SURFACE_WG, 300),
 				BiomePlacementModifier.of());*/
-		//-------------------
-		//Registry.register(Registries.FEATURE, ProbablyChests.id("pc_surface_chest"), SURFACE_CHEST_FEATURE);
+    //-------------------
+    //Registry.register(Registries.FEATURE, ProbablyChests.id("pc_surface_chest"), SURFACE_CHEST_FEATURE);
 		/*Registry.register(Registries.FEATURE, ProbablyChests.id("pc_underground_chest"), UNDERGROUND_CHEST_FEATURE);
 		Registry.register(Registries.FEATURE, ProbablyChests.id("pc_normal_pot"), NORMAL_POT_FEATURE);
 		Registry.register(Registries.FEATURE, ProbablyChests.id("pc_lush_pot"), LUSH_POT_FEATURE);
 		Registry.register(Registries.FEATURE, ProbablyChests.id("pc_rocky_pot"), ROCKY_POT_FEATURE);
 		Registry.register(Registries.FEATURE, ProbablyChests.id("pc_nether_pot"), NETHER_POT_FEATURE);*/
-	//}
+    //}
 
 	/*public static RegistryEntry<PlacedFeature> register (Identifier id, RegistryEntry<? extends ConfiguredFeature<?, ?>> registryEntry, List<PlacementModifier> modifiers) {
 		return BuiltinRegistries.add(BuiltinRegistries.PLACED_FEATURE, id, new PlacedFeature(RegistryEntry.upcast(registryEntry), List.copyOf(modifiers)));

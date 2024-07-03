@@ -1,8 +1,6 @@
 package org.cloudwarp.probablychests.entity;
 
 import net.minecraft.core.component.DataComponents;
-import net.minecraft.entity.*;
-import net.minecraft.entity.ai.goal.*;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
@@ -11,25 +9,15 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.entity.AgeableMob;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.OwnableEntity;
-import net.minecraft.world.entity.TamableAnimal;
+import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.Goal;
-import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
-import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
-import net.minecraft.world.entity.ai.goal.target.OwnerHurtByTargetGoal;
-import net.minecraft.world.entity.ai.goal.target.OwnerHurtTargetGoal;
-import net.minecraft.world.entity.ai.goal.target.ResetUniversalAngerTargetGoal;
+import net.minecraft.world.entity.ai.goal.target.*;
 import net.minecraft.world.entity.monster.Ghast;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.AbstractArrow;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.EntityGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import org.cloudwarp.probablychests.block.PCChestTypes;
@@ -41,6 +29,7 @@ import org.jetbrains.annotations.Nullable;
 import software.bernie.geckolib.animatable.GeoAnimatable;
 import software.bernie.geckolib.animatable.GeoEntity;
 import software.bernie.geckolib.animatable.instance.AnimatableInstanceCache;
+import software.bernie.geckolib.animation.AnimationState;
 import software.bernie.geckolib.animation.*;
 import software.bernie.geckolib.util.GeckoLibUtil;
 
@@ -48,11 +37,7 @@ import java.util.EnumSet;
 
 public class PCChestMimicPet extends PCTameablePetWithInventory implements GeoEntity, OwnableEntity {
     // Animations
-    public static final RawAnimation IDLE = RawAnimation.begin().then("idle", Animation.LoopType.LOOP);
     public static final RawAnimation JUMP = RawAnimation.begin().then("jump", Animation.LoopType.PLAY_ONCE).then("flying", Animation.LoopType.LOOP);
-    public static final RawAnimation CLOSE_SITTING = RawAnimation.begin().then("close", Animation.LoopType.PLAY_ONCE).then("sleeping", Animation.LoopType.LOOP);
-    public static final RawAnimation CLOSE_STANDING = RawAnimation.begin().then("close", Animation.LoopType.PLAY_ONCE).then("standing", Animation.LoopType.LOOP);
-    public static final RawAnimation OPENING = RawAnimation.begin().then("open", Animation.LoopType.PLAY_ONCE);
     public static final RawAnimation OPENED = RawAnimation.begin().then("opened", Animation.LoopType.LOOP);
     public static final RawAnimation SITTING = RawAnimation.begin().then("sleeping", Animation.LoopType.LOOP);
     public static final RawAnimation STANDING = RawAnimation.begin().then("standing", Animation.LoopType.LOOP);
@@ -102,11 +87,6 @@ public class PCChestMimicPet extends PCTameablePetWithInventory implements GeoEn
         this.targetSelector.addGoal(2, new OwnerHurtTargetGoal(this));
         this.targetSelector.addGoal(8, new ResetUniversalAngerTargetGoal<>(this, true));
         this.targetSelector.addGoal(4, new NearestAttackableTargetGoal<>(this, Player.class, 10, true, false, this::isAngryAt));
-    }
-
-    @Override
-    public EntityGetter level() {
-        return null;
     }
 
     class PetMimicEscapeDangerGoal

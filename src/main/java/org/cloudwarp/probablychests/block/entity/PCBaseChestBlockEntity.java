@@ -37,8 +37,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 
 public class PCBaseChestBlockEntity extends RandomizableContainerBlockEntity implements GeoBlockEntity {
-    public static final RawAnimation CLOSE = RawAnimation.begin().thenPlay("close").thenLoop("closed");
-    public static final RawAnimation OPEN = RawAnimation.begin().thenPlay("open").thenLoop("opened");
+    public static final RawAnimation CLOSE = RawAnimation.begin().thenLoop("closed");
+    public static final RawAnimation OPEN = RawAnimation.begin().thenLoop("opened");
     public static final EnumProperty<PCChestState> CHEST_STATE = PCProperties.PC_CHEST_STATE;
     private final AnimatableInstanceCache cache = GeckoLibUtil.createInstanceCache(this);
     public boolean isMimic = false;
@@ -241,7 +241,7 @@ public class PCBaseChestBlockEntity extends RandomizableContainerBlockEntity imp
 
     @Override
     public void registerControllers(AnimatableManager.ControllerRegistrar controllers) {
-        controllers.add(new AnimationController<>(this, 0, this::predicate));
+        controllers.add(new AnimationController<>(this, 7, this::predicate));
     }
 
     @Override

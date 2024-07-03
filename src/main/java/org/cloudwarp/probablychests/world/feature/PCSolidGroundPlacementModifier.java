@@ -13,8 +13,6 @@ import net.minecraft.world.level.levelgen.placement.PlacementModifier;
 import net.minecraft.world.level.levelgen.placement.PlacementModifierType;
 
 public class PCSolidGroundPlacementModifier extends PlacementModifier {
-
-
 	public static final MapCodec<PCSolidGroundPlacementModifier> MODIFIER_CODEC = RecordCodecBuilder.mapCodec((instance) -> instance.group(
 			(BlockPredicate.CODEC.fieldOf("target_condition")).forGetter(PCSolidGroundPlacementModifier -> PCSolidGroundPlacementModifier.targetPredicate)
 	).apply(instance, PCSolidGroundPlacementModifier::new));
@@ -34,7 +32,7 @@ public class PCSolidGroundPlacementModifier extends PlacementModifier {
 	}
 
 	@Override
-	public Stream<BlockPos> count (PlacementContext context, RandomSource random, BlockPos pos) {
+	public Stream<BlockPos> getPositions (PlacementContext context, RandomSource random, BlockPos pos) {
 		BlockPos.MutableBlockPos mutableTarget = pos.mutable();
 		mutableTarget.move(Direction.DOWN);
 		WorldGenLevel structureWorldAccess = context.getLevel();
