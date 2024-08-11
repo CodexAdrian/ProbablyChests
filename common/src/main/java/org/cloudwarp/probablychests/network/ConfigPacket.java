@@ -1,19 +1,25 @@
 package org.cloudwarp.probablychests.network;
 
-import io.netty.buffer.ByteBuf;
+import com.teamresourceful.resourcefullib.common.bytecodecs.ExtraByteCodecs;
+import com.teamresourceful.resourcefullib.common.network.Packet;
+import com.teamresourceful.resourcefullib.common.network.base.ClientboundPacketType;
+import com.teamresourceful.resourcefullib.common.network.base.NetworkHandle;
+import com.teamresourceful.resourcefullib.common.network.base.PacketType;
+import com.teamresourceful.resourcefullib.common.network.base.ServerboundPacketType;
+import com.teamresourceful.resourcefullib.common.network.defaults.CodecPacketType;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import org.cloudwarp.probablychests.ProbablyChests;
 
-public record ConfigPacket(CompoundTag config) implements CustomPacketPayload {
+public record ConfigPacket(CompoundTag config) implements Packet<ConfigPacket> {
 
-    public static final Type<ConfigPacket> ID = new Type<>(ProbablyChests.id("probably_chests_config_update"));
-    public static final StreamCodec<ByteBuf, ConfigPacket> CODEC = ByteBufCodecs.COMPOUND_TAG.map(ConfigPacket::new, ConfigPacket::config);
+    public static final ClientboundPacketType<ConfigPacket> TYPE = CodecPacketType.Client.create(
+        ProbablyChests.id("probably_chests_config_update"),
+        ExtraByteCodecs.NONNULL_COMPOUND_TAG.map(ConfigPacket::new, ConfigPacket::config),
+        NetworkHandle.handle((packet) -> ProbablyChests.loadedConfig = ProbablyChests.nbtToConfig(packet.config()))
+    );
 
     @Override
-    public Type<? extends CustomPacketPayload> type() {
-        return ID;
+    public PacketType<ConfigPacket> type() {
+        return TYPE;
     }
 }

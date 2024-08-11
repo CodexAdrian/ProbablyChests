@@ -1,7 +1,5 @@
 package org.cloudwarp.probablychests.world.gen;
 
-import net.fabricmc.fabric.api.biome.v1.BiomeModifications;
-import net.fabricmc.fabric.api.biome.v1.BiomeSelectors;
 import org.cloudwarp.probablychests.ProbablyChests;
 import org.cloudwarp.probablychests.utils.PCConfig;
 import org.cloudwarp.probablychests.world.feature.PCFeatures;
@@ -9,7 +7,7 @@ import org.cloudwarp.probablychests.world.feature.PCFeatures;
 import java.util.List;
 
 public class PCPotGeneration {
-	/*public static void generatePot () {
+	/*public static void generatePot () { // TODO: Implement xplat
 		PCConfig config = ProbablyChests.loadedConfig;
 		float potRarity = config.worldGen.potSpawnChance;
 		if (potRarity > 0) {

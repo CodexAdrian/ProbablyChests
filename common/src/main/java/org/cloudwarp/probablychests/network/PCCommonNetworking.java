@@ -1,13 +1,13 @@
 package org.cloudwarp.probablychests.network;
 
-import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
+import com.teamresourceful.resourcefullib.common.network.Network;
+import org.cloudwarp.probablychests.ProbablyChests;
 
 public class PCCommonNetworking {
+    public static final Network NETWORK = new Network(ProbablyChests.id("main"), 0);
 
     public static void init() {
-        PayloadTypeRegistry.playS2C().register(ConfigPacket.ID, ConfigPacket.CODEC);
-        PayloadTypeRegistry.playS2C().register(MimicInventoryPacket.ID, MimicInventoryPacket.CODEC);
-
-
+        NETWORK.register(ConfigPacket.TYPE);
+        NETWORK.register(MimicInventoryPacket.TYPE);
     }
 }

@@ -20,7 +20,7 @@ public class LushPotFeature extends Feature<PCPotFeatureConfig> {
 		WorldGenLevel structureWorldAccess = context.level();
 		BlockPos pos = context.origin();
 		PCPotFeatureConfig config = context.config();
-		structureWorldAccess.setBlock(pos, PCBlocks.LUSH_POT.defaultBlockState(), 3);
+		structureWorldAccess.setBlock(pos, PCBlocks.LUSH_POT.get().defaultBlockState(), 3);
 		return true;
 	}
 }

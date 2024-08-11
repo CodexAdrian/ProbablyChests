@@ -1,5 +1,5 @@
 package org.cloudwarp.probablychests.data;
-
+/*
 import net.fabricmc.fabric.api.datagen.v1.FabricDataOutput;
 import net.fabricmc.fabric.api.datagen.v1.provider.FabricDynamicRegistryProvider;
 import net.minecraft.core.HolderLookup;
@@ -24,3 +24,4 @@ public class PCWorldGenerator extends FabricDynamicRegistryProvider {
 		return ProbablyChests.MOD_ID;
 	}
 }
+ */

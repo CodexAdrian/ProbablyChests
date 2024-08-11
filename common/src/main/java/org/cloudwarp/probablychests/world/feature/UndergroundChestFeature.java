@@ -1,8 +1,6 @@
 package org.cloudwarp.probablychests.world.feature;
 
 import com.mojang.serialization.Codec;
-import net.fabricmc.fabric.api.tag.convention.v1.ConventionalBiomeTags;
-import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.tags.BlockTags;
@@ -18,6 +16,7 @@ import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConf
 import org.cloudwarp.probablychests.block.entity.PCBaseChestBlockEntity;
 import org.cloudwarp.probablychests.registry.PCBlocks;
 import org.cloudwarp.probablychests.registry.PCProperties;
+import org.cloudwarp.probablychests.registry.PCTags;
 import org.cloudwarp.probablychests.utils.PCLockedState;
 
 import java.util.Optional;
@@ -45,10 +44,10 @@ public class UndergroundChestFeature extends Feature<NoneFeatureConfiguration> {
 			if(structureWorldAccess.getBlockState(pos.above()).isRedstoneConductor(structureWorldAccess,pos.above())){
 				return false;
 			}
-			if (structureWorldAccess.getBiome(pos).is(ConventionalBiomeTags.ICY) || structureWorldAccess.getBiome(pos).is(ConventionalBiomeTags.SNOWY)) {
-				blockToBePlaced = PCBlocks.ICE_CHEST.defaultBlockState();
+			if (structureWorldAccess.getBiome(pos).is(PCTags.icy()) || structureWorldAccess.getBiome(pos).is(PCTags.snowy())) {
+				blockToBePlaced = PCBlocks.ICE_CHEST.get().defaultBlockState();
 			} else {
-				blockToBePlaced = PCBlocks.CORAL_CHEST.defaultBlockState();
+				blockToBePlaced = PCBlocks.CORAL_CHEST.get().defaultBlockState();
 			}
 		} else {
 			Optional<Column> optional = Column.scan(structureWorldAccess, pos, 64, UndergroundChestFeature::canGenerate, UndergroundChestFeature::canReplace);
@@ -63,35 +62,38 @@ public class UndergroundChestFeature extends Feature<NoneFeatureConfiguration> {
 				return false;
 			}
 			if(isNether){
-				blockToBePlaced = PCBlocks.NETHER_CHEST.defaultBlockState();
+				blockToBePlaced = PCBlocks.NETHER_CHEST.get().defaultBlockState();
 			}
 			BlockPos biomeCheckPos = pos.relative(Direction.UP, 5);
 			// Set block type based on environment
 			if (random.nextFloat() < 0.85F) {
 				if (structureWorldAccess.getBiome(biomeCheckPos).is(Biomes.LUSH_CAVES)) {
-					blockToBePlaced = PCBlocks.LUSH_CHEST.defaultBlockState();
+					blockToBePlaced = PCBlocks.LUSH_CHEST.get().defaultBlockState();
 				} else if (structureWorldAccess.getBiome(biomeCheckPos).is(Biomes.DRIPSTONE_CAVES)) {
-					blockToBePlaced = PCBlocks.ROCKY_CHEST.defaultBlockState();
+					blockToBePlaced = PCBlocks.ROCKY_CHEST.get().defaultBlockState();
 				}
 			}
 			if (blockToBePlaced == null) {
 				if (pos.getY() <= 0) {
 					if (random.nextFloat() < 0.25F) {
-						blockToBePlaced = PCBlocks.GOLD_CHEST.defaultBlockState();
+						blockToBePlaced = PCBlocks.GOLD_CHEST.get().defaultBlockState();
 						hasGoldLock = true;
 					} else {
-						blockToBePlaced = PCBlocks.STONE_CHEST.defaultBlockState();
+						blockToBePlaced = PCBlocks.STONE_CHEST.get().defaultBlockState();
 					}
 				} else {
+					/* // TODO: Implement xplat tags
 					if (structureWorldAccess.getBiome(biomeCheckPos).is(ConventionalBiomeTags.SNOWY) || structureWorldAccess.getBiome(biomeCheckPos).is(ConventionalBiomeTags.ICY)) {
-						blockToBePlaced = PCBlocks.ICE_CHEST.defaultBlockState();
+						blockToBePlaced = PCBlocks.ICE_CHEST.get().defaultBlockState();
 					} else {
 						if (random.nextFloat() < 0.25F) {
-							blockToBePlaced = PCBlocks.LUSH_CHEST.defaultBlockState();
+							blockToBePlaced = PCBlocks.LUSH_CHEST.get().defaultBlockState();
 						} else {
-							blockToBePlaced = PCBlocks.NORMAL_CHEST.defaultBlockState();
+							blockToBePlaced = PCBlocks.NORMAL_CHEST.get().defaultBlockState();
 						}
 					}
+
+					 */
 				}
 			}
 		}
@@ -99,12 +101,14 @@ public class UndergroundChestFeature extends Feature<NoneFeatureConfiguration> {
 			lockedState = PCLockedState.LOCKED;
 		}
 		//structureWorldAccess.setBlockState(pos, blockToBePlaced.with(PCProperties.PC_LOCKED_STATE, lockedState), 3);
+		/*
 		if(FabricLoader.getInstance().isDevelopmentEnvironment()) {
 			BlockPos debugPos = pos;
 			for (int i = 0; i < 40; i++) {
 				structureWorldAccess.setBlock(debugPos = debugPos.above(), Blocks.END_ROD.defaultBlockState(), 3);
 			}
 		}
+		 */
 		structureWorldAccess.setBlock(pos, blockToBePlaced.setValue(BlockStateProperties.WATERLOGGED, isWater).setValue(PCProperties.PC_LOCKED_STATE,lockedState), 3);
 		PCBaseChestBlockEntity chest = (PCBaseChestBlockEntity) structureWorldAccess.getBlockEntity(pos);
 		if (chest != null) {

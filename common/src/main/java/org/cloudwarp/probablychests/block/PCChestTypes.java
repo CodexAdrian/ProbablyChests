@@ -83,31 +83,31 @@ public enum PCChestTypes {
 
 	public BlockEntityType<? extends PCBaseChestBlockEntity> getBlockEntityType () {
 		return switch (this) {
-			case LUSH   -> PCBlockEntities.LUSH_CHEST_BLOCK_ENTITY;
-			case NORMAL -> PCBlockEntities.NORMAL_CHEST_BLOCK_ENTITY;
-			case ROCKY  -> PCBlockEntities.ROCKY_CHEST_BLOCK_ENTITY;
-			case STONE  -> PCBlockEntities.STONE_CHEST_BLOCK_ENTITY;
-			case GOLD   -> PCBlockEntities.GOLD_CHEST_BLOCK_ENTITY;
-			case NETHER -> PCBlockEntities.NETHER_CHEST_BLOCK_ENTITY;
-			case SHADOW -> PCBlockEntities.SHADOW_CHEST_BLOCK_ENTITY;
-			case ICE    -> PCBlockEntities.ICE_CHEST_BLOCK_ENTITY;
-			case CORAL  -> PCBlockEntities.CORAL_CHEST_BLOCK_ENTITY;
-			default     -> PCBlockEntities.NORMAL_CHEST_BLOCK_ENTITY;
+			case LUSH   -> PCBlockEntities.LUSH_CHEST_BLOCK_ENTITY.get();
+			case NORMAL -> PCBlockEntities.NORMAL_CHEST_BLOCK_ENTITY.get();
+			case ROCKY  -> PCBlockEntities.ROCKY_CHEST_BLOCK_ENTITY.get();
+			case STONE  -> PCBlockEntities.STONE_CHEST_BLOCK_ENTITY.get();
+			case GOLD   -> PCBlockEntities.GOLD_CHEST_BLOCK_ENTITY.get();
+			case NETHER -> PCBlockEntities.NETHER_CHEST_BLOCK_ENTITY.get();
+			case SHADOW -> PCBlockEntities.SHADOW_CHEST_BLOCK_ENTITY.get();
+			case ICE    -> PCBlockEntities.ICE_CHEST_BLOCK_ENTITY.get();
+			case CORAL  -> PCBlockEntities.CORAL_CHEST_BLOCK_ENTITY.get();
+			default     -> PCBlockEntities.NORMAL_CHEST_BLOCK_ENTITY.get();
 		};
 	}
 
 	public PCBaseChestBlockEntity makeEntity (BlockPos pos, BlockState state) {
 		return switch (this) {
-			case LUSH   -> PCBlockEntities.LUSH_CHEST_BLOCK_ENTITY.create(pos, state);
-			case NORMAL -> PCBlockEntities.NORMAL_CHEST_BLOCK_ENTITY.create(pos, state);
-			case ROCKY  -> PCBlockEntities.ROCKY_CHEST_BLOCK_ENTITY.create(pos, state);
-			case STONE  -> PCBlockEntities.STONE_CHEST_BLOCK_ENTITY.create(pos, state);
-			case GOLD   -> PCBlockEntities.GOLD_CHEST_BLOCK_ENTITY.create(pos, state);
-			case NETHER -> PCBlockEntities.NETHER_CHEST_BLOCK_ENTITY.create(pos, state);
-			case SHADOW -> PCBlockEntities.SHADOW_CHEST_BLOCK_ENTITY.create(pos, state);
-			case ICE    -> PCBlockEntities.ICE_CHEST_BLOCK_ENTITY.create(pos, state);
-			case CORAL  -> PCBlockEntities.CORAL_CHEST_BLOCK_ENTITY.create(pos, state);
-			default     -> PCBlockEntities.NORMAL_CHEST_BLOCK_ENTITY.create(pos, state);
+			case LUSH   -> PCBlockEntities.LUSH_CHEST_BLOCK_ENTITY.get().create(pos, state);
+			case NORMAL -> PCBlockEntities.NORMAL_CHEST_BLOCK_ENTITY.get().create(pos, state);
+			case ROCKY  -> PCBlockEntities.ROCKY_CHEST_BLOCK_ENTITY.get().create(pos, state);
+			case STONE  -> PCBlockEntities.STONE_CHEST_BLOCK_ENTITY.get().create(pos, state);
+			case GOLD   -> PCBlockEntities.GOLD_CHEST_BLOCK_ENTITY.get().create(pos, state);
+			case NETHER -> PCBlockEntities.NETHER_CHEST_BLOCK_ENTITY.get().create(pos, state);
+			case SHADOW -> PCBlockEntities.SHADOW_CHEST_BLOCK_ENTITY.get().create(pos, state);
+			case ICE    -> PCBlockEntities.ICE_CHEST_BLOCK_ENTITY.get().create(pos, state);
+			case CORAL  -> PCBlockEntities.CORAL_CHEST_BLOCK_ENTITY.get().create(pos, state);
+			default     -> PCBlockEntities.NORMAL_CHEST_BLOCK_ENTITY.get().create(pos, state);
 		};
 	}
 

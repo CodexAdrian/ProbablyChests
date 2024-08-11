@@ -19,7 +19,7 @@ public class NormalPotFeature extends Feature<PCPotFeatureConfig> {
 		WorldGenLevel structureWorldAccess = context.level();
 		BlockPos pos = context.origin();
 		PCPotFeatureConfig config = context.config();
-		structureWorldAccess.setBlock(pos, PCBlocks.NORMAL_POT.defaultBlockState(), 3);
+		structureWorldAccess.setBlock(pos, PCBlocks.NORMAL_POT.get().defaultBlockState(), 3);
 		return true;
 	}
 }

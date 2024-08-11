@@ -1,8 +1,6 @@
 package org.cloudwarp.probablychests.world.feature;
 
 import com.mojang.serialization.Codec;
-import net.fabricmc.fabric.api.tag.convention.v1.ConventionalBiomeTags;
-import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.core.BlockPos;
 import net.minecraft.tags.BiomeTags;
 import net.minecraft.world.level.WorldGenLevel;
@@ -15,6 +13,7 @@ import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConf
 import org.cloudwarp.probablychests.block.entity.PCBaseChestBlockEntity;
 import org.cloudwarp.probablychests.registry.PCBlocks;
 import org.cloudwarp.probablychests.registry.PCProperties;
+import org.cloudwarp.probablychests.registry.PCTags;
 import org.cloudwarp.probablychests.utils.PCLockedState;
 
 public class SurfaceChestFeature extends Feature<NoneFeatureConfiguration> {
@@ -40,27 +39,27 @@ public class SurfaceChestFeature extends Feature<NoneFeatureConfiguration> {
 
 		if (isEnd) {
 			hasVoidLock = true;
-			blockToBePlaced = PCBlocks.SHADOW_CHEST.defaultBlockState();
+			blockToBePlaced = PCBlocks.SHADOW_CHEST.get().defaultBlockState();
 		} else if (structureWorldAccess.getBiome(pos).is(BiomeTags.IS_OCEAN)) {
-			if(structureWorldAccess.getBiome(pos).is(ConventionalBiomeTags.ICY)){
-				blockToBePlaced = PCBlocks.ICE_CHEST.defaultBlockState();
+			if(structureWorldAccess.getBiome(pos).is(PCTags.icy())){
+				blockToBePlaced = PCBlocks.ICE_CHEST.get().defaultBlockState();
 			}else{
 				return false;
 			}
 		} else {
-			if (structureWorldAccess.getBiome(pos).is(ConventionalBiomeTags.FLORAL) ||
-					structureWorldAccess.getBiome(pos).is(ConventionalBiomeTags.FLOWER_FORESTS) ||
-					structureWorldAccess.getBiome(pos).is(ConventionalBiomeTags.CLIMATE_TEMPERATE)) {
-				blockToBePlaced = PCBlocks.LUSH_CHEST.defaultBlockState();
+			if (structureWorldAccess.getBiome(pos).is(PCTags.floral()) ||
+					structureWorldAccess.getBiome(pos).is(PCTags.flowerForest()) ||
+					structureWorldAccess.getBiome(pos).is(PCTags.climateTemperate())) {
+				blockToBePlaced = PCBlocks.LUSH_CHEST.get().defaultBlockState();
 			} else if (isBiomeWithinTempRange(biome, 1F, 10.0F) ||
-					structureWorldAccess.getBiome(pos).is(ConventionalBiomeTags.CLIMATE_HOT)) {
-				blockToBePlaced = PCBlocks.ROCKY_CHEST.defaultBlockState();
-			} else if(structureWorldAccess.getBiome(pos).is(ConventionalBiomeTags.SNOWY)){
-				blockToBePlaced = PCBlocks.ICE_CHEST.defaultBlockState();
-			} else if(structureWorldAccess.getBiome(pos).is(ConventionalBiomeTags.BEACH)){
-				blockToBePlaced = PCBlocks.CORAL_CHEST.defaultBlockState();
+					structureWorldAccess.getBiome(pos).is(PCTags.climateHot())) {
+				blockToBePlaced = PCBlocks.ROCKY_CHEST.get().defaultBlockState();
+			} else if(structureWorldAccess.getBiome(pos).is(PCTags.snowy())){
+				blockToBePlaced = PCBlocks.ICE_CHEST.get().defaultBlockState();
+			} else if(structureWorldAccess.getBiome(pos).is(PCTags.beach())){
+				blockToBePlaced = PCBlocks.CORAL_CHEST.get().defaultBlockState();
 			}else{
-				blockToBePlaced = PCBlocks.NORMAL_CHEST.defaultBlockState();
+				blockToBePlaced = PCBlocks.NORMAL_CHEST.get().defaultBlockState();
 			}
 		}
 
@@ -68,12 +67,14 @@ public class SurfaceChestFeature extends Feature<NoneFeatureConfiguration> {
 			lockedState = PCLockedState.LOCKED;
 		}
 		structureWorldAccess.setBlock(pos, blockToBePlaced.setValue(PCProperties.PC_LOCKED_STATE, lockedState), 3);
+		/*
 		if(FabricLoader.getInstance().isDevelopmentEnvironment()) {
 			BlockPos debugPos = pos;
 			for (int i = 0; i < 60; i++) {
 				structureWorldAccess.setBlock(debugPos = debugPos.above(), Blocks.END_ROD.defaultBlockState(), 3);
 			}
 		}
+		 */
 		PCBaseChestBlockEntity chest = (PCBaseChestBlockEntity) structureWorldAccess.getBlockEntity(pos);
 		if (chest != null) {
 			chest.isNatural = true;

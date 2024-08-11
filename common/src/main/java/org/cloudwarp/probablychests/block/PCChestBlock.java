@@ -130,37 +130,37 @@ public class PCChestBlock extends AbstractChestBlock<PCBaseChestBlockEntity> imp
         }
         NonNullList<ItemStack> locks = NonNullList.create();
         ItemStack itemStack = player.getItemInHand(hand);
-        if (chest.hasGoldLock && itemStack.is(PCItems.GOLD_KEY)) {
+        if (chest.hasGoldLock && itemStack.is(PCItems.GOLD_KEY.get())) {
             chest.isLocked = false;
             PCBaseChestBlockEntity.playSound(world, pos, state, PCSounds.LOCK_UNLOCK, 1.3f);
             if (chest.isNatural && !chest.hasBeenInteractedWith) {
                 if (!player.getAbilities().instabuild) {
                     itemStack.shrink(1);
-                    locks.add(new ItemStack(PCItems.GOLD_LOCK));
+                    locks.add(new ItemStack(PCItems.GOLD_LOCK.get()));
                     Containers.dropContents(world, pos, locks);
                 }
                 chest.hasGoldLock = false;
             }
             return true;
-        } else if (chest.hasVoidLock && itemStack.is(PCItems.VOID_KEY)) {
+        } else if (chest.hasVoidLock && itemStack.is(PCItems.VOID_KEY.get())) {
             chest.isLocked = false;
             PCBaseChestBlockEntity.playSound(world, pos, state, PCSounds.LOCK_UNLOCK, 1.3f);
             if (chest.isNatural && !chest.hasBeenInteractedWith) {
                 if (!player.getAbilities().instabuild) {
                     itemStack.shrink(1);
-                    locks.add(new ItemStack(PCItems.VOID_LOCK));
+                    locks.add(new ItemStack(PCItems.VOID_LOCK.get()));
                     Containers.dropContents(world, pos, locks);
                 }
                 chest.hasVoidLock = false;
             }
             return true;
-        } else if (chest.hasIronLock && itemStack.is(PCItems.IRON_KEY)) {
+        } else if (chest.hasIronLock && itemStack.is(PCItems.IRON_KEY.get())) {
             chest.isLocked = false;
             PCBaseChestBlockEntity.playSound(world, pos, state, PCSounds.LOCK_UNLOCK, 1.3f);
             if (chest.isNatural && !chest.hasBeenInteractedWith) {
                 if (!player.getAbilities().instabuild) {
                     itemStack.shrink(1);
-                    locks.add(new ItemStack(PCItems.IRON_LOCK));
+                    locks.add(new ItemStack(PCItems.IRON_LOCK.get()));
                     Containers.dropContents(world, pos, locks);
                 }
                 chest.hasIronLock = false;
@@ -178,15 +178,15 @@ public class PCChestBlock extends AbstractChestBlock<PCBaseChestBlockEntity> imp
             return false;
         }
         ItemStack itemStack = player.getItemInHand(hand);
-        if (chest.hasGoldLock && itemStack.is(PCItems.GOLD_KEY)) {
+        if (chest.hasGoldLock && itemStack.is(PCItems.GOLD_KEY.get())) {
             chest.isLocked = true;
             PCBaseChestBlockEntity.playSound(world, pos, state, PCSounds.LOCK_UNLOCK, 0.6f);
             return true;
-        } else if (chest.hasVoidLock && itemStack.is(PCItems.VOID_KEY)) {
+        } else if (chest.hasVoidLock && itemStack.is(PCItems.VOID_KEY.get())) {
             chest.isLocked = true;
             PCBaseChestBlockEntity.playSound(world, pos, state, PCSounds.LOCK_UNLOCK, 0.6f);
             return true;
-        } else if (chest.hasIronLock && itemStack.is(PCItems.IRON_KEY)) {
+        } else if (chest.hasIronLock && itemStack.is(PCItems.IRON_KEY.get())) {
             chest.isLocked = true;
             PCBaseChestBlockEntity.playSound(world, pos, state, PCSounds.LOCK_UNLOCK, 0.6f);
             return true;
@@ -202,7 +202,7 @@ public class PCChestBlock extends AbstractChestBlock<PCBaseChestBlockEntity> imp
         PCBaseChestBlockEntity chest = getChestBlockFromWorld(world, pos);
         ItemStack itemStack = player.getItemInHand(hand);
         if (!chest.hasGoldLock && !chest.hasVoidLock && !chest.hasIronLock) {
-            if (itemStack.is(PCItems.GOLD_LOCK) && chest.type().equals(PCChestTypes.GOLD)) {
+            if (itemStack.is(PCItems.GOLD_LOCK.get()) && chest.type().equals(PCChestTypes.GOLD)) {
                 chest.isLocked = true;
                 chest.hasGoldLock = true;
                 chest.owner = player.getUUID();
@@ -211,7 +211,7 @@ public class PCChestBlock extends AbstractChestBlock<PCBaseChestBlockEntity> imp
                 }
                 PCBaseChestBlockEntity.playSound(world, pos, state, PCSounds.APPLY_LOCK1, 0.6f);
                 return true;
-            } else if (itemStack.is(PCItems.VOID_LOCK) && chest.type().equals(PCChestTypes.SHADOW)) {
+            } else if (itemStack.is(PCItems.VOID_LOCK.get()) && chest.type().equals(PCChestTypes.SHADOW)) {
                 chest.isLocked = true;
                 chest.hasVoidLock = true;
                 chest.owner = player.getUUID();
@@ -220,7 +220,7 @@ public class PCChestBlock extends AbstractChestBlock<PCBaseChestBlockEntity> imp
                 }
                 PCBaseChestBlockEntity.playSound(world, pos, state, PCSounds.APPLY_LOCK1, 0.6f);
                 return true;
-            } else if (itemStack.is(PCItems.IRON_LOCK)) {
+            } else if (itemStack.is(PCItems.IRON_LOCK.get())) {
                 chest.isLocked = true;
                 chest.hasIronLock = true;
                 chest.owner = player.getUUID();
@@ -269,12 +269,12 @@ public class PCChestBlock extends AbstractChestBlock<PCBaseChestBlockEntity> imp
         }
         //------------------------
         if (chest != null) {
-            if (itemStack.is(PCItems.PET_MIMIC_KEY) && config.mimicSettings.allowPetMimics && !player.isShiftKeyDown() && tryMakePetMimic(world, pos, state, player, this.type)) {
+            if (itemStack.is(PCItems.PET_MIMIC_KEY.get()) && config.mimicSettings.allowPetMimics && !player.isShiftKeyDown() && tryMakePetMimic(world, pos, state, player, this.type)) {
                 if (!player.isCreative()) {
                     itemStack.shrink(1);
                 }
                 return ItemInteractionResult.CONSUME;
-            } else if (itemStack.is(PCItems.MIMIC_KEY) && !player.isShiftKeyDown() && !isSecretMimic(chest, world, pos, this.type) && world.getDifficulty() != Difficulty.PEACEFUL) {
+            } else if (itemStack.is(PCItems.MIMIC_KEY.get()) && !player.isShiftKeyDown() && !isSecretMimic(chest, world, pos, this.type) && world.getDifficulty() != Difficulty.PEACEFUL) {
                 chest.isMimic = true;
                 chest.isNatural = false;
                 if (!player.isCreative()) {
@@ -332,11 +332,11 @@ public class PCChestBlock extends AbstractChestBlock<PCBaseChestBlockEntity> imp
         }
         NonNullList<ItemStack> locks = NonNullList.create();
         if (chest.hasVoidLock) {
-            locks.add(new ItemStack(PCItems.VOID_LOCK));
+            locks.add(new ItemStack(PCItems.VOID_LOCK.get()));
         } else if (chest.hasGoldLock) {
-            locks.add(new ItemStack(PCItems.GOLD_LOCK));
+            locks.add(new ItemStack(PCItems.GOLD_LOCK.get()));
         } else if (chest.hasIronLock) {
-            locks.add(new ItemStack(PCItems.IRON_LOCK));
+            locks.add(new ItemStack(PCItems.IRON_LOCK.get()));
         }
         if (!locks.isEmpty()) {
             Containers.dropContents(world, pos, locks);

@@ -3,8 +3,6 @@ package org.cloudwarp.probablychests;
 import me.shedaniel.autoconfig.AutoConfig;
 import me.shedaniel.autoconfig.ConfigHolder;
 import me.shedaniel.autoconfig.serializer.Toml4jConfigSerializer;
-import net.fabricmc.api.ModInitializer;
-import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import org.apache.logging.log4j.LogManager;
@@ -17,7 +15,7 @@ import org.cloudwarp.probablychests.utils.PCEventHandler;
 import org.cloudwarp.probablychests.world.feature.PCPlacementModifierType;
 import org.cloudwarp.probablychests.world.gen.PCWorldGen;
 
-public class ProbablyChests implements ModInitializer {
+public class ProbablyChests {
 	public static final Logger LOGGER = LogManager.getLogger();
 	public static final String MOD_ID = "probablychests";
 	public static ConfigHolder<PCConfig> configHolder;
@@ -27,7 +25,6 @@ public class ProbablyChests implements ModInitializer {
 		return new ResourceLocation(MOD_ID, path);
 	}
 
-	@Override
 	public void onInitialize () {
 		LOGGER.info("[Probably-Chests] is initializing.");
 		AutoConfig.register(PCConfig.class, Toml4jConfigSerializer::new);
@@ -52,9 +49,11 @@ public class ProbablyChests implements ModInitializer {
 		LOGGER.info("[Probably-Chests] has successfully been initialized.");
 		LOGGER.info("[Probably-Chests] if you have any issues or questions feel free to join my Discord: https://discord.gg/fvcFxTg6sB");
 	}
+
 	public static PCConfig getConfig () {
 		return configHolder.getConfig();
 	}
+
 	public static CompoundTag configToNBT(){
 		PCConfig config = getConfig();
 		CompoundTag nbt = new CompoundTag();

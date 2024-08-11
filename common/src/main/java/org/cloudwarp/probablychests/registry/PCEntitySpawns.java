@@ -1,7 +1,5 @@
 package org.cloudwarp.probablychests.registry;
 
-import net.fabricmc.fabric.api.biome.v1.BiomeModifications;
-import net.fabricmc.fabric.api.biome.v1.BiomeSelectors;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 import org.cloudwarp.probablychests.ProbablyChests;
@@ -11,6 +9,7 @@ public class PCEntitySpawns {
 
 	public static void init(){
 		PCConfig config = ProbablyChests.loadedConfig;
+		/*
 		if(config.mimicSettings.spawnNaturalMimics) {
 			BiomeModifications.addSpawn(BiomeSelectors.spawnsOneOf(EntityType.ZOMBIE), MobCategory.MONSTER, PCEntities.NORMAL_CHEST_MIMIC, 1, 1, 1);
 			BiomeModifications.addSpawn(BiomeSelectors.spawnsOneOf(EntityType.ZOMBIE), MobCategory.MONSTER, PCEntities.ROCKY_CHEST_MIMIC, 1, 1, 1);
@@ -22,5 +21,6 @@ public class PCEntitySpawns {
 			BiomeModifications.addSpawn(BiomeSelectors.spawnsOneOf(EntityType.GOAT), MobCategory.MONSTER, PCEntities.ICE_CHEST_MIMIC, 1, 1, 1);
 			BiomeModifications.addSpawn(BiomeSelectors.spawnsOneOf(EntityType.DROWNED), MobCategory.MONSTER, PCEntities.CORAL_CHEST_MIMIC, 1, 1, 1);
 		}
+		 */
 	}
 }

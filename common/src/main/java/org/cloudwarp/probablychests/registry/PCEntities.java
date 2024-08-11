@@ -15,7 +15,7 @@ import org.cloudwarp.probablychests.entity.PCTameablePetWithInventory;
 public class PCEntities {
     public static final EntityType<PCChestMimic> NORMAL_CHEST_MIMIC = Registry.register(
             BuiltInRegistries.ENTITY_TYPE,
-            new ResourceLocation(ProbablyChests.MOD_ID, "normal_chest_mimic"),
+            ProbablyChests.id( "normal_chest_mimic"),
             EntityType.Builder.of(
                             PCChestMimic::new,
                             MobCategory.MONSTER
@@ -24,7 +24,7 @@ public class PCEntities {
     );
     public static final EntityType<PCChestMimic> LUSH_CHEST_MIMIC = Registry.register(
             BuiltInRegistries.ENTITY_TYPE,
-            new ResourceLocation(ProbablyChests.MOD_ID, "lush_chest_mimic"),
+            ProbablyChests.id( "lush_chest_mimic"),
             EntityType.Builder.of(
                             PCChestMimic::new,
                             MobCategory.MONSTER
@@ -33,7 +33,7 @@ public class PCEntities {
     );
     public static final EntityType<PCChestMimic> ROCKY_CHEST_MIMIC = Registry.register(
             BuiltInRegistries.ENTITY_TYPE,
-            new ResourceLocation(ProbablyChests.MOD_ID, "rocky_chest_mimic"),
+            ProbablyChests.id( "rocky_chest_mimic"),
             EntityType.Builder.of(
                             PCChestMimic::new,
                             MobCategory.MONSTER
@@ -43,7 +43,7 @@ public class PCEntities {
     );
     public static final EntityType<PCChestMimic> STONE_CHEST_MIMIC = Registry.register(
             BuiltInRegistries.ENTITY_TYPE,
-            new ResourceLocation(ProbablyChests.MOD_ID, "stone_chest_mimic"),
+            ProbablyChests.id( "stone_chest_mimic"),
             EntityType.Builder.of(
                             PCChestMimic::new,
                             MobCategory.MONSTER
@@ -52,7 +52,7 @@ public class PCEntities {
     );
     public static final EntityType<PCChestMimic> GOLD_CHEST_MIMIC = Registry.register(
             BuiltInRegistries.ENTITY_TYPE,
-            new ResourceLocation(ProbablyChests.MOD_ID, "gold_chest_mimic"),
+            ProbablyChests.id( "gold_chest_mimic"),
             EntityType.Builder.of(
                             PCChestMimic::new,
                             MobCategory.MONSTER
@@ -61,7 +61,7 @@ public class PCEntities {
     );
     public static final EntityType<PCChestMimic> NETHER_CHEST_MIMIC = Registry.register(
             BuiltInRegistries.ENTITY_TYPE,
-            new ResourceLocation(ProbablyChests.MOD_ID, "nether_chest_mimic"),
+            ProbablyChests.id( "nether_chest_mimic"),
             EntityType.Builder.of(
                             PCChestMimic::new,
                             MobCategory.MONSTER
@@ -70,7 +70,7 @@ public class PCEntities {
     );
     public static final EntityType<PCChestMimic> SHADOW_CHEST_MIMIC = Registry.register(
             BuiltInRegistries.ENTITY_TYPE,
-            new ResourceLocation(ProbablyChests.MOD_ID, "shadow_chest_mimic"),
+            ProbablyChests.id( "shadow_chest_mimic"),
             EntityType.Builder.of(
                             PCChestMimic::new,
                             MobCategory.MONSTER
@@ -79,7 +79,7 @@ public class PCEntities {
     );
     public static final EntityType<PCChestMimic> ICE_CHEST_MIMIC = Registry.register(
             BuiltInRegistries.ENTITY_TYPE,
-            new ResourceLocation(ProbablyChests.MOD_ID, "ice_chest_mimic"),
+            ProbablyChests.id( "ice_chest_mimic"),
             EntityType.Builder.of(
                             PCChestMimic::new,
                             MobCategory.MONSTER
@@ -88,7 +88,7 @@ public class PCEntities {
     );
     public static final EntityType<PCChestMimic> CORAL_CHEST_MIMIC = Registry.register(
             BuiltInRegistries.ENTITY_TYPE,
-            new ResourceLocation(ProbablyChests.MOD_ID, "coral_chest_mimic"),
+            ProbablyChests.id( "coral_chest_mimic"),
             EntityType.Builder.of(
                             PCChestMimic::new,
                             MobCategory.MONSTER
@@ -98,63 +98,63 @@ public class PCEntities {
     //---------------------------------------
     public static final EntityType<PCChestMimicPet> NORMAL_CHEST_MIMIC_PET = Registry.register(
             BuiltInRegistries.ENTITY_TYPE,
-            new ResourceLocation(ProbablyChests.MOD_ID, "normal_chest_mimic_pet"),
+            ProbablyChests.id( "normal_chest_mimic_pet"),
             EntityType.Builder.of(PCChestMimicPet::new, MobCategory.CREATURE)
                     .sized(0.9f, 0.9f)
                     .build(null)
     );
     public static final EntityType<PCChestMimicPet> LUSH_CHEST_MIMIC_PET = Registry.register(
             BuiltInRegistries.ENTITY_TYPE,
-            new ResourceLocation(ProbablyChests.MOD_ID, "lush_chest_mimic_pet"),
+            ProbablyChests.id( "lush_chest_mimic_pet"),
             EntityType.Builder.of(PCChestMimicPet::new, MobCategory.CREATURE)
                     .sized(0.9f, 0.9f)
                     .build(null)
     );
     public static final EntityType<PCChestMimicPet> ROCKY_CHEST_MIMIC_PET = Registry.register(
             BuiltInRegistries.ENTITY_TYPE,
-            new ResourceLocation(ProbablyChests.MOD_ID, "rocky_chest_mimic_pet"),
+            ProbablyChests.id( "rocky_chest_mimic_pet"),
             EntityType.Builder.of(PCChestMimicPet::new, MobCategory.CREATURE)
                     .sized(0.9f, 0.9f)
                     .build(null)
     );
     public static final EntityType<PCChestMimicPet> STONE_CHEST_MIMIC_PET = Registry.register(
             BuiltInRegistries.ENTITY_TYPE,
-            new ResourceLocation(ProbablyChests.MOD_ID, "stone_chest_mimic_pet"),
+            ProbablyChests.id( "stone_chest_mimic_pet"),
             EntityType.Builder.of(PCChestMimicPet::new, MobCategory.CREATURE)
                     .sized(0.9f, 0.9f)
                     .build(null)
     );
     public static final EntityType<PCChestMimicPet> GOLD_CHEST_MIMIC_PET = Registry.register(
             BuiltInRegistries.ENTITY_TYPE,
-            new ResourceLocation(ProbablyChests.MOD_ID, "gold_chest_mimic_pet"),
+            ProbablyChests.id( "gold_chest_mimic_pet"),
             EntityType.Builder.of(PCChestMimicPet::new, MobCategory.CREATURE)
                     .sized(0.9f, 0.9f)
                     .build(null)
     );
     public static final EntityType<PCChestMimicPet> NETHER_CHEST_MIMIC_PET = Registry.register(
             BuiltInRegistries.ENTITY_TYPE,
-            new ResourceLocation(ProbablyChests.MOD_ID, "nether_chest_mimic_pet"),
+            ProbablyChests.id( "nether_chest_mimic_pet"),
             EntityType.Builder.of(PCChestMimicPet::new, MobCategory.CREATURE)
                     .sized(0.9f, 0.9f)
                     .build(null)
     );
     public static final EntityType<PCChestMimicPet> SHADOW_CHEST_MIMIC_PET = Registry.register(
             BuiltInRegistries.ENTITY_TYPE,
-            new ResourceLocation(ProbablyChests.MOD_ID, "shadow_chest_mimic_pet"),
+            ProbablyChests.id( "shadow_chest_mimic_pet"),
             EntityType.Builder.of(PCChestMimicPet::new, MobCategory.CREATURE)
                     .sized(0.9f, 0.9f)
                     .build(null)
     );
     public static final EntityType<PCChestMimicPet> ICE_CHEST_MIMIC_PET = Registry.register(
             BuiltInRegistries.ENTITY_TYPE,
-            new ResourceLocation(ProbablyChests.MOD_ID, "ice_chest_mimic_pet"),
+            ProbablyChests.id( "ice_chest_mimic_pet"),
             EntityType.Builder.of(PCChestMimicPet::new, MobCategory.CREATURE)
                     .sized(0.9f, 0.9f)
                     .build(null)
     );
     public static final EntityType<PCChestMimicPet> CORAL_CHEST_MIMIC_PET = Registry.register(
             BuiltInRegistries.ENTITY_TYPE,
-            new ResourceLocation(ProbablyChests.MOD_ID, "coral_chest_mimic_pet"),
+            ProbablyChests.id( "coral_chest_mimic_pet"),
             EntityType.Builder.of(PCChestMimicPet::new, MobCategory.CREATURE)
                     .sized(0.9f, 0.9f)
                     .build(null)

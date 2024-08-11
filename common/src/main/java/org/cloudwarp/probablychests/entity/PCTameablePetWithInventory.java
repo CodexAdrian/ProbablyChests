@@ -2,8 +2,6 @@ package org.cloudwarp.probablychests.entity;
 
 import com.mojang.serialization.Codec;
 import io.netty.buffer.ByteBuf;
-import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
@@ -181,7 +179,7 @@ public abstract class PCTameablePetWithInventory extends TamableAnimal implement
                 if (food != null) this.heal((float) food.nutrition());
                 this.playSound(PCSounds.MIMIC_BITE, this.getSoundVolume(), 1.5F + getPitchOffset(0.2F));
                 return InteractionResult.SUCCESS;
-            } else if (itemStack.is(PCItems.MIMIC_HAND_BELL)) {
+            } else if (itemStack.is(PCItems.MIMIC_HAND_BELL.get())) {
                 if (!this.getIsAbandoned() && this.getOwner() == player) {
                     if (player.isShiftKeyDown()) {
                         ((PlayerEntityAccess) player).removeMimicFromKeepList(this.getUUID());
@@ -201,14 +199,14 @@ public abstract class PCTameablePetWithInventory extends TamableAnimal implement
                     }
                 }
                 return InteractionResult.SUCCESS;
-            } else if (this.getOwner() == player && !this.getIsAbandoned() && itemStack.is(PCItems.IRON_LOCK) && !this.getMimicHasLock() && config.mimicSettings.allowPetMimicLocking) {
+            } else if (this.getOwner() == player && !this.getIsAbandoned() && itemStack.is(PCItems.IRON_LOCK.get()) && !this.getMimicHasLock() && config.mimicSettings.allowPetMimicLocking) {
                 this.setMimicHasLock(true);
                 this.setIsMimicLocked(true);
                 if (!player.getAbilities().instabuild) {
                     itemStack.shrink(1);
                 }
                 this.playSound(PCSounds.APPLY_LOCK1, this.getSoundVolume(), 1.0F + getPitchOffset(0.1F));
-            } else if (this.getOwner() == player && !this.getIsAbandoned() && itemStack.is(PCItems.IRON_KEY) && this.getMimicHasLock() && config.mimicSettings.allowPetMimicLocking) {
+            } else if (this.getOwner() == player && !this.getIsAbandoned() && itemStack.is(PCItems.IRON_KEY.get()) && this.getMimicHasLock() && config.mimicSettings.allowPetMimicLocking) {
                 this.setIsMimicLocked(!this.getIsMimicLocked());
                 if (this.getIsMimicLocked()) {
                     this.playSound(PCSounds.LOCK_UNLOCK, this.getSoundVolume(), 1.3F + getPitchOffset(0.1F));
@@ -246,7 +244,7 @@ public abstract class PCTameablePetWithInventory extends TamableAnimal implement
                     return InteractionResult.sidedSuccess(this.level().isClientSide());
                 }
             }
-        } else if (itemStack.is(PCItems.PET_MIMIC_KEY)) {
+        } else if (itemStack.is(PCItems.PET_MIMIC_KEY.get())) {
             if (!player.getAbilities().instabuild) {
                 itemStack.shrink(1);
             }
@@ -312,9 +310,11 @@ public abstract class PCTameablePetWithInventory extends TamableAnimal implement
                     this.getId(),
                     (byte) syncId
             );
+            /* TODO: Fix this
             for (ServerPlayer p : PlayerLookup.tracking(this)) {
                 ServerPlayNetworking.send(p, packet);
             }
+             */
         }
     }
 

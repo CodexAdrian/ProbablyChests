@@ -1,13 +1,11 @@
 package org.cloudwarp.probablychests.world.gen;
 
-import net.fabricmc.fabric.api.biome.v1.BiomeModifications;
-import net.fabricmc.fabric.api.biome.v1.BiomeSelectors;
 import org.cloudwarp.probablychests.ProbablyChests;
 import org.cloudwarp.probablychests.utils.PCConfig;
 import org.cloudwarp.probablychests.world.feature.PCFeatures;
 
 public class UndergroundChestGeneration {
-	/*public static void generateChest () {
+	/*public static void generateChest () { // TODO: Implement xplat
 		PCConfig config = ProbablyChests.loadedConfig;
 		float chestRarity = config.worldGen.chestSpawnChance;
 		if (chestRarity > 0) {

@@ -55,21 +55,20 @@ subprojects {
 
             officialMojangMappings()
 
-            parchment(create(group = "org.parchmentmc.data", name = "parchment-$minecraftVersion", version = parchmentVersion))
+            parchment(create(group = "org.parchmentmc.data", name = "parchment-1.21", version = parchmentVersion))
         })
 
         compileOnly(group = "com.teamresourceful", name = "yabn", version = "1.0.3")
-        "modApi"(group = "com.teamresourceful.resourcefullib", name = "resourcefullib-$modLoader-1.20.5", version = resourcefulLibVersion)
+        "modApi"(group = "com.teamresourceful.resourcefullib", name = "resourcefullib-$modLoader-1.21", version = resourcefulLibVersion)
+        "modImplementation"(group = "software.bernie.geckolib", name = "geckolib-$modLoader-1.21", version = geckolibVersion)
 
         if (isCommon) {
             "modCompileOnly"(group = "me.shedaniel", name = "RoughlyEnoughItems-api", version = reiVersion)
             "modCompileOnly"(group = "me.shedaniel", name = "RoughlyEnoughItems-default-plugin", version = reiVersion)
-            "modImplementation"(group = "software.bernie.geckolib", name = "geckolib-fabric-$minecraftVersion", version = geckolibVersion)
         } else {
             "modRuntimeOnly"(group = "me.shedaniel", name = "RoughlyEnoughItems-$modLoader", version = reiVersion)
             "modCompileOnly"(group = "me.shedaniel", name = "RoughlyEnoughItems-api-$modLoader", version = reiVersion)
             "modCompileOnly"(group = "me.shedaniel", name = "RoughlyEnoughItems-default-plugin-$modLoader", version = reiVersion)
-            "modImplementation"(group = "software.bernie.geckolib", name = "geckolib-$modLoader-$minecraftVersion", version = geckolibVersion)
         }
     }
 
