@@ -1,4 +1,4 @@
-package org.cloudwarp.fabric;
+package org.cloudwarp.probablychests.fabric;
 
 import org.cloudwarp.ProbablyChests;
 

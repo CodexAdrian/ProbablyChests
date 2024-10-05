@@ -1,4 +1,4 @@
-package org.cloudwarp.client.neoforge;
+package org.cloudwarp.probablychests.client.neoforge;
 
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;

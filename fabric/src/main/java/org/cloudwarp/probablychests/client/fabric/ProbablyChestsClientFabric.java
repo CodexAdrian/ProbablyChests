@@ -1,4 +1,4 @@
-package org.cloudwarp.client.fabric;
+package org.cloudwarp.probablychests.client.fabric;
 
 import org.cloudwarp.client.ProbablyChestsClient;
 

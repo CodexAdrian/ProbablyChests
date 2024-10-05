@@ -16,11 +16,11 @@
     "environment": "*",
     "entrypoints": {
         "main": [
-            "org.cloudwarp.fabric.ProbablyChestsFabric::init"
+            "org.cloudwarp.probablychests.fabric.ProbablyChestsFabric::init"
         ]
         ,
         "client": [
-            "org.cloudwarp.client.fabric.ProbablyChestsClientFabric::init"
+            "org.cloudwarp.probablychests.client.fabric.ProbablyChestsClientFabric::init"
         ]
     },
     "mixins": [

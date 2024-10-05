@@ -1,4 +1,4 @@
-package org.cloudwarp.datagen;
+package org.cloudwarp.probablychests.datagen;
 
 import org.cloudwarp.ProbablyChests;
 import net.minecraft.core.HolderLookup;

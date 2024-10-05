@@ -1,4 +1,4 @@
-package org.cloudwarp.neoforge;
+package org.cloudwarp.probablychests.neoforge;
 
 import org.cloudwarp.ProbablyChests;
 import net.neoforged.bus.api.IEventBus;
